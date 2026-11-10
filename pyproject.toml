@@ -1,0 +1,90 @@
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "musicdetect"
+version = "0.1.0"
+description = "Ce que voit un détecteur de musique IA : détecteurs M0-M4 entraînés sur FMA + reconstructions par codecs neuronaux, testés sur FakeMusicCaps et sous attaques."
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+
+# --- Cœur : tout ce qui est nécessaire pour M0, M1, l'évaluation, les attaques et les tests.
+# Aucune dépendance à PyTorch ici : le chemin « numpy / scipy / scikit-learn » fonctionne seul.
+# Bornes basses : versions du verrou `requirements.lock` de thomas0barand/robust-deepfake-detector
+# (Python 3.13), seul ensemble dont on sait qu'il a tourné ensemble ; pour pandas et pyyaml, qui n'y
+# figurent pas, elles viennent des API utilisées. Bornes hautes : prochaine version majeure.
+# Les versions exactes sont fixées par `uv lock` (voir docs/DEPENDENCIES.md).
+dependencies = [
+    "numpy>=2.3,<3",
+    "scipy>=1.17,<2",
+    "scikit-learn>=1.8,<2",
+    "joblib>=1.5,<2",
+    "pandas>=2.2,<4",
+    "pyyaml>=6.0,<7",
+    "soxr>=1.0,<2",
+    "tqdm>=4.67,<5",
+    "matplotlib>=3.10,<4",
+]
+
+[project.optional-dependencies]
+# --- Codecs neuronaux (EnCodec, DAC, Mimi via transformers) + M2 + M3.
+torch = [
+    "torch>=2.9,<3",
+    "transformers>=4.57,<6",
+    "huggingface-hub>=0.34",
+]
+# --- M4 : SONICS SpecTTTra en inférence seule. Le paquet `sonics` tire librosa, numba, timm et fvcore.
+# Il est épinglé à un commit précis (HEAD du 22 mai 2025 lors de la lecture du dépôt).
+sonics = [
+    "musicdetect[torch]",
+    "torchaudio>=2.9,<3",
+    "timm>=1.0.7",
+    "sonics @ git+https://github.com/awsaf49/sonics.git@9156ffad151f797c71556923c4a02fa01fa8fc91",
+]
+all = ["musicdetect[torch,sonics]"]
+
+[project.scripts]
+musicdetect = "musicdetect.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+# Si la machine n'a pas de GPU NVIDIA, décommenter pour éviter les roues CUDA (plusieurs Go) :
+# [[tool.uv.index]]
+# name = "pytorch-cpu"
+# url = "https://download.pytorch.org/whl/cpu"
+# explicit = true
+# [tool.uv.sources]
+# torch = { index = "pytorch-cpu" }
+# torchaudio = { index = "pytorch-cpu" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+musicdetect = ["default.yaml"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "ffmpeg: nécessite le binaire ffmpeg (libmp3lame, librubberband)",
+    "torch: nécessite PyTorch (extra « torch »)",
+    "slow: test lent",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+# E501 : docstrings et commentaires en français, volontairement un peu plus longs que 100 colonnes
+ignore = ["E501"]

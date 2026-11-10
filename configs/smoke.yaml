@@ -1,0 +1,17 @@
+# Essai rapide (quelques minutes, un laptop) : vérifie que toute la chaîne tourne avant un vrai calcul.
+#   musicdetect manifest -c configs/smoke.yaml --tag smoke
+# Les chiffres obtenus n'ont AUCUNE valeur scientifique (échantillon minuscule).
+fma:
+  subset: small
+  max_tracks: 400
+audio:
+  segments_per_track: 1
+m2:
+  epochs: 3
+  patience: 2
+m3:
+  epochs: 5
+  aug_per_segment: 1
+  patience: 2
+eval:
+  bootstrap: 200

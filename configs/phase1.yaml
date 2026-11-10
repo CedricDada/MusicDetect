@@ -1,0 +1,15 @@
+# Phase 1 de la proposition (§4.5) : 2 000 pistes de FMA small et environ 4 configurations de codec.
+#   musicdetect manifest   -c configs/phase1.yaml
+#   musicdetect build-fma  -c configs/phase1.yaml --codec encodec_24k_6kbps --codec encodec_24k_12kbps \
+#                          --codec encodec_32k_musicgen --codec dac_44k
+# Stockage attendu : 2 000 pistes x 2 segments x 320 Ko = 1,3 Go par source, soit ~6,4 Go pour le réel + 4 codecs.
+# Les valeurs non listées viennent de src/musicdetect/default.yaml.
+fma:
+  subset: small
+  split_mode: artist
+  max_tracks: 2000
+audio:
+  segments_per_track: 2
+eval:
+  bootstrap: 1000
+  fpr_target: 0.01

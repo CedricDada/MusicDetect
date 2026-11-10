@@ -1,0 +1,1242 @@
+% ============================================================
+% Projet audio -- « Ce que voit un détecteur de musique IA »
+% Dossier de projet + programme d'apprentissage -- version 2
+% Compilation : pdflatex (deux passes) ; aucun paquet exotique.
+% ============================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\IfFileExists{french.ldf}{%
+  \usepackage[french]{babel}}{%
+  % Repli pour les installations sans babel-french : le .tex reste compilable.
+  \usepackage[french,provide=*]{babel}%
+  \providecommand{\og}{\guillemotleft\nobreakspace}%
+  \providecommand{\fg}{\nobreakspace\guillemotright}}
+\usepackage[a4paper,margin=2cm,top=2.2cm,bottom=2.2cm]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{pifont}
+\usepackage{booktabs,longtable,array}
+\usepackage{enumitem}
+\usepackage{needspace}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+\usepackage{fancyhdr}
+\usepackage[hyphens]{url}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black,%
+  breaklinks=true,unicode=true,%
+  pdftitle={Projet audio : ce que voit un détecteur de musique IA (v2)},%
+  pdfauthor={Dossier de projet}]{hyperref}
+
+% Les URL peuvent être coupées n'importe où (colonnes étroites des tableaux).
+\makeatletter
+\g@addto@macro{\UrlBreaks}{\UrlOrds}
+\makeatother
+\urlstyle{same}
+\Urlmuskip=0mu plus 1mu
+
+% ---------- mise en page ----------
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\setlist{itemsep=1pt,topsep=3pt,parsep=1pt,leftmargin=*}
+\setlength{\tabcolsep}{4pt}
+\setlength{\LTleft}{0pt}
+\setlength{\LTright}{0pt}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{3}
+\renewcommand{\arraystretch}{1.15}
+\setlength{\emergencystretch}{2em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Projet audio -- détecteur de musique IA}
+\fancyhead[R]{\small Version 2 -- 7 novembre 2026}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+
+% ---------- raccourcis de typographie ----------
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcommand{\sS}{\ding{72}}   % étoile pleine : parcours minimal
+\newcommand{\sO}{\ding{73}}   % étoile creuse : parcours approfondi
+\newcommand{\vtwo}{\textsuperscript{\textcolor{orange!80!black}{\textbf{v2}}}}
+
+% ---------- étiquettes de vérification des liens ----------
+\newcommand{\lV}{\textbf{\textcolor{green!45!black}{[V]}}}
+\newcommand{\lO}{\textbf{\textcolor{teal}{[O]}}}
+\newcommand{\lR}{\textbf{\textcolor{orange!80!black}{[R]}}}
+\newcommand{\lM}{\textbf{\textcolor{red!70!black}{[M]}}}
+
+% ---------- niveaux de priorité du projet ----------
+\newcommand{\nA}{\textbf{Niv.~1}}  % niveau 1 : coeur
+\newcommand{\nB}{\textbf{Niv.~2}}  % niveau 2
+\newcommand{\nC}{\textbf{Niv.~3}}  % niveau 3 : extension
+\newcommand{\vtwot}{\textsuperscript{v2}}  % marqueur v2 dans un titre de boite
+
+% ---------- boîtes ----------
+\newtcolorbox{hyp}[1]{breakable,enhanced,colback=blue!3,colframe=blue!50!black,%
+  boxrule=0.5pt,arc=1.5pt,left=5pt,right=5pt,top=3pt,bottom=3pt,%
+  title={#1},fonttitle=\bfseries\small,before skip=6pt,after skip=6pt}
+\newtcolorbox{corr}[1]{breakable,enhanced,colback=orange!6,colframe=orange!75!black,%
+  boxrule=0.5pt,arc=1.5pt,left=5pt,right=5pt,top=3pt,bottom=3pt,%
+  title={#1},fonttitle=\bfseries\small,before skip=6pt,after skip=6pt}
+\newtcolorbox{info}[1]{breakable,enhanced,colback=gray!7,colframe=gray!60!black,%
+  boxrule=0.5pt,arc=1.5pt,left=5pt,right=5pt,top=3pt,bottom=3pt,%
+  title={#1},fonttitle=\bfseries\small,before skip=6pt,after skip=6pt}
+
+\title{\textbf{Projet audio\\[2pt] \og{}Ce que voit un détecteur de musique IA\fg{}}\\[6pt]
+  \large Dossier de projet + programme d'apprentissage\\[2pt]
+  \normalsize Version 2 (révisée) -- reprise du dossier d'origine avec les corrections du 7 novembre 2026}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\begin{info}{Public et usage}
+\textbf{Public :} étudiant de M2 IA, à l'aise avec CNN, Transformers et PyTorch, \textbf{sans cours d'audio} (ni traitement du signal musical, ni VAE/GAN/diffusion audio). Les slides d'\emph{AI for Sound} (G.~Peeters) ne sont pas disponibles ; on les remplace par des cours ouverts (voir section~\ref{sec:prog}).
+
+Ce fichier est écrit pour \textbf{amorcer une nouvelle session de travail} dédiée à ce projet. Il est autonome : la session n'a pas besoin de l'historique de la conversation d'origine. Le mode d'emploi pour cette session est à la section~\ref{sec:mode}.
+
+Les ajouts et corrections de cette version sont repérés par le marqueur \vtwo{} et récapitulés à la section~\ref{sec:changes}.
+\end{info}
+
+\tableofcontents
+\clearpage
+\setcounter{section}{-1}
+\section{Mode d'emploi et légende}\label{sec:s0}
+
+\subsection{Légende des liens}
+Tous les liens sont donnés en URL complète. Chaque lien porte une étiquette :
+
+{\small
+\begin{longtable}{L{1.3cm}L{14.2cm}}
+\toprule
+\textbf{Étiquette} & \textbf{Sens}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Étiquette} & \textbf{Sens}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\lV & \textbf{Vérifié} : page ouverte pendant la préparation, ou lien présent dans les listes que l'étudiant a explicitement autorisées, avec un titre cohérent.\\
+\lO\vtwo & \textbf{Ouvert lors de la révision} (7 novembre 2026) avec l'outil de lecture de pages : le contenu a été obtenu sous forme d'extraction ou de résumé, pas par lecture intégrale. Les chiffres cités sont à relire dans le papier avant d'être repris dans un rapport.\\
+\lR & Vu seulement dans un résultat de recherche (titre et auteurs cohérents), page non ouverte.\\
+\lM & Non vérifié (mémoire ou déduction). À tester avant d'en dépendre.\\
+\end{longtable}}
+
+Les arXiv IDs sont à jour à la date de préparation (novembre 2026). Un lien qui ne marche pas doit être signalé, jamais remplacé par une adresse inventée.
+
+\begin{corr}{Limites de l'étiquetage\vtwot}
+\begin{itemize}
+\item Dans la version~1, \lV{} regroupait deux situations (\og{}page ouverte\fg{} et \og{}lien issu d'une liste autorisée\fg{}). La distinction n'est pas reconstituable après coup : tant qu'on n'a pas ouvert la page, traiter \lV{} comme \og{}titre cohérent, contenu non garanti\fg{}.
+\item Depuis l'environnement de révision, les pages \texttt{arxiv.org/abs/} de deux papiers (2409.10684 et 2607.27454) ont été refusées (adresse non autorisée pour la session) ; leurs versions PDF (\texttt{arxiv.org/pdf/\ldots}) ont pu être ouvertes (\lO). Les liens \texttt{/abs/} donnés plus loin restent ceux du dossier d'origine et sont à utiliser tels quels par l'étudiant.
+\end{itemize}
+\end{corr}
+
+\subsection{Ce que ce fichier ne contient pas}
+\begin{itemize}
+\item \textbf{Les cours eux-mêmes} : la nouvelle session les écrit, notion par notion (section~\ref{sec:mode}).
+\item \textbf{Les slides de Peeters} : introuvables en ligne (seules des pages de séminaires existent). Ne pas en chercher de substitut \og{}équivalent\fg{} sous ce nom.
+\item \textbf{Les chiffres des papiers récents (2025--2026) lus seulement par résumé} : ils sont marqués comme tels. Les relire dans le papier avant de les citer dans un rapport.
+\end{itemize}
+
+\subsection{Niveaux de maîtrise utilisés}
+{\small
+\begin{longtable}{L{3.6cm}L{11.9cm}}
+\toprule
+\textbf{Niveau} & \textbf{Définition}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\textbf{Comprendre} & Expliquer à l'oral, sans notes, à un camarade.\\
+\textbf{Savoir calculer/dériver} & Refaire la formule ou le calcul sur papier.\\
+\textbf{Implémenter} & Écrire le code minimal qui marche (NumPy/PyTorch).\\
+\textbf{Survoler} & Savoir où c'est, à quoi ça sert, ne pas le refaire.\\
+\end{longtable}}
+
+\subsection{Niveaux de priorité du projet\vtwo}\label{sec:niveaux}
+La version~1 contenait déjà une mention de \og{}niveau~3\fg{} pour les extensions ; cette version rend les trois niveaux explicites pour que le projet tienne en quatre semaines. Règle : ne passer au niveau suivant que lorsque le précédent est terminé et documenté.
+
+{\small
+\begin{longtable}{L{1.7cm}L{13.8cm}}
+\toprule
+\textbf{Niveau} & \textbf{Contenu}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\nA{} (c\oe{}ur) &
+Données (FMA-small, ré-encodage EnCodec et DAC) et chaîne de normalisation ; détecteurs M0 (brut et résiduel), M1 et M2 ; matrice de généralisation $5\times5$ ; contrôles de raccourci (H3) ; attaques (vitesse, hauteur, MP3, rééchantillonnage) appliquées à M1 et M2 ; ablations \og{}faux d'entraînement\fg{} et \og{}chaîne de normalisation\fg{} ; analyse d'erreurs (matrice de confusion par générateur, faux positifs par genre, dérive du seuil) ; métriques avec intervalles de confiance.\\
+\nB{} &
+M3 (log-fréquence, H4 complète) ; M4 (SpecTTTra en inférence) ; condition \og{}décodeur oracle\fg{} (H1 testée proprement) ; ablations supplémentaires (représentation, durée du segment, pics spectraux, augmentations) ; test d'écoute $15\times20$.\\
+\nC{} (extensions) &
+Test hors distribution sur faux titres SONICS ou sur AI-OpenBMAT ; estimation du facteur de vitesse ; codecs supplémentaires (Mimi, codec entraîné sur de la musique) ; comparaison conceptuelle avec la détection \og{}zéro-shot\fg{}.\\
+\end{longtable}}
+
+\subsection{Ce qui change par rapport à la version 1\vtwo}\label{sec:changes}
+Chaque correction est intégrée dans la section indiquée ; le détail des preuves est donné là où elle apparaît.
+
+{\small
+\begin{longtable}{L{0.9cm}L{11.6cm}L{3.0cm}}
+\toprule
+\textbf{\#} & \textbf{Correction ou ajout} & \textbf{Où}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{\#} & \textbf{Correction ou ajout} & \textbf{Où}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+C1 & Cadrage : le projet est une \textbf{réplication étendue} d'Afchar et al., pas une idée nouvelle ; état de l'art complété (MusicDET, token spaces, ArtifactNet). & §\ref{sec:question}, §\ref{sec:position}, §\ref{sec:papiers}\\
+C2 & Faits vérifiés sur FakeMusicCaps : mono, \textbf{16\,kHz}, WAV flottant 32 bits, clips de 10\,s, sans paroles ; présence des clips réels non confirmée. & §\ref{sec:faits}, §\ref{sec:donnees}\\
+C3 & Chaîne de normalisation précisée : aller-retour identique réel/faux, condition principale à 16\,kHz, condition secondaire pleine bande sur FMA seul. & §\ref{sec:donnees}\\
+C4 & M0 redéfini en \textbf{M0-brut} (contrôle de cohérence) et \textbf{M0-résiduel} (vrai instrument de mesure des raccourcis). & §\ref{sec:hyp}, §\ref{sec:detecteurs}\\
+C5 & H1 reformulée : familles de décodeurs déclarées avant les résultats, condition \og{}décodeur oracle\fg{}, corrélation de rang seulement descriptive. & §\ref{sec:hyp}, §\ref{sec:generateurs}\\
+C6 & H2 et H4 mises à jour : MusicGen déjà détecté dans la littérature ; compression MP3 non testée dans le papier de robustesse. & §\ref{sec:hyp}\\
+C7 & Découpages : par artiste (FMA) et par légende (FakeMusicCaps) ; deux négatifs réels de test (FMA et MusicCaps). & §\ref{sec:donnees}\\
+C8 & Statistiques : bootstrap par groupe, comparaison appariée d'AUC, comparaisons multiples ; nouvelle notion N26. & §\ref{sec:eval}, §\ref{sec:notions}\\
+C9 & Budget de stockage chiffré ; chronométrage obligatoire en semaine~1 ; Mimi rétrogradé ; checkpoint EnCodec 32\,kHz à vérifier. & §\ref{sec:budget}, §\ref{sec:donnees}\\
+C10 & Durée de segment : 2,5\,/\,5\,/\,10\,s (le test est limité à 10\,s) ; 30\,s seulement sur FMA. & §\ref{sec:ablations}\\
+C11 & Niveaux de priorité 1/2/3 pour tenir en quatre semaines. & §\ref{sec:niveaux}, §\ref{sec:protocole}\\
+C12 & Programme : notions N25--N28, durées clarifiées, papiers ajoutés, article 2603.09936 à trancher. & §\ref{sec:notions}--§\ref{sec:papiers}\\
+C13 & Titres confirmés (Afchar 2024 et ICASSP 2025 ; papier de robustesse, ISMIR 2026). & §\ref{sec:papiers}, §\ref{sec:limites}\\
+C14 & Labs L6 et L7 révisés ; lab L9 ajouté (normalisation et stockage). & §\ref{sec:labs}\\
+\end{longtable}}
+\section{Le projet en bref}\label{sec:s1}
+
+\subsection{Question}\label{sec:question}
+Un détecteur appris uniquement sur de la \textbf{musique réelle} contre sa \textbf{version ré-encodée par des codecs neuronaux} généralise-t-il à des générateurs qu'il n'a jamais vus, ou apprend-il un \textbf{raccourci de jeu de données} ? Et que devient-il quand on change la vitesse ou qu'on compresse en MP3 ?
+
+Le sujet est proche du travail de Deezer sur la détection de musique IA et se traite avec peu de GPU.
+
+\begin{corr}{Positionnement honnête\vtwot}
+L'idée d'entraîner un détecteur à distinguer un audio réel de sa reconstruction par un auto-encodeur est celle d'Afchar et al. (voir §\ref{sec:position}). Ce projet est donc une \textbf{réplication étendue} : on reprend le principe, puis on ajoute (i) une matrice de généralisation croisée sur FakeMusicCaps, (ii) une mesure chiffrée des raccourcis (M0), (iii) des hypothèses datées avant les expériences, (iv) un test de la représentation log-fréquence sous compression MP3, que le papier de référence ne couvre pas. À présenter comme tel dans le rapport et sur le CV.
+\end{corr}
+
+\subsection{Principe expérimental (en une phrase)}\label{sec:principe}
+Prendre de la vraie musique (FMA), fabriquer des \og{}faux\fg{} \textbf{sans générateur de musique} en la faisant passer par un codec neuronal (EnCodec, DAC, Mimi), entraîner des détecteurs réel/faux, puis les tester sur de vrais faux générateurs (FakeMusicCaps : 5 modèles) et sous attaques (vitesse, hauteur, MP3, rééchantillonnage), en mesurant en parallèle ce que valent les raccourcis de métadonnées.
+
+\vtwo{} \textit{Précision :} dans la version~2, Mimi passe au niveau~3 (voir §\ref{sec:donnees}), et les tests sur FakeMusicCaps se font dans la bande \textbf{0--8\,kHz} imposée par le format de ce jeu.
+
+\subsection{Faits vérifiés sur les sources (état à la préparation)}\label{sec:faits}
+
+{\footnotesize
+\begin{longtable}{L{2.3cm}L{9.8cm}L{3.5cm}}
+\toprule
+\textbf{Sujet} & \textbf{Fait} & \textbf{Source}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Sujet} & \textbf{Fait} & \textbf{Source}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Explication de Fourier (ISMIR 2025) &
+Les modules de déconvolution des générateurs laissent des \textbf{pics spectraux systématiques}, liés à l'architecture plutôt qu'aux données ou aux poids. Critère de détection simple et interprétable, plus de 99\,\% de précision dans plusieurs scénarios ; tests sur modèles ouverts et sur Suno et Udio. &
+\url{https://arxiv.org/abs/2506.19108} \lV\\
+\addlinespace
+Dépôt associé &
+\texttt{compute\_fakeprints.py}, \texttt{train\_test\_regressor.py} ; utilise FMA et SONICS ; \textbf{CC BY-NC 4.0} ; mentionne \textbf{deux demandes de brevet} (déc.\ 2024). &
+\url{https://github.com/deezer/ismir25-ai-music-detector} \lV\\
+\addlinespace
+Dépôt deepfake-detector &
+Entraîne un détecteur réel contre reconstruction par auto-encodeurs ; cite les codecs Musika et LAC ; CC-BY-NC-4.0 ; aucune instruction d'entraînement ; pas l'outil de production de Deezer. \vtwo{} Dépôt associé à l'article ICASSP 2025 \og{}AI-Generated Music Detection and its Challenges\fg{} (Afchar, Meseguer Brocal, Hennequin). La page vue pendant la révision comporte une rubrique \og{}Reproducibility instructions\fg{} : la relire avant de conclure qu'il n'y a aucune instruction (\lR). &
+\url{https://github.com/deezer/deepfake-detector} \lV\\
+\addlinespace
+Afchar et al.\ \vtwo{} &
+\og{}Detecting music deepfakes is easy but actually hard\fg{} : cadre \og{}réel contre reconstruction par auto-encodeur\fg{} (EnCodec, DAC, Griffin-Lim, décodeur de Musika), conçu pour contrôler le contenu musical et le format de fichier ; 249\,820 pistes reconstruites (chiffre relevé dans un résumé tiers, \lR) ; précision rapportée de 99,8\,\% ; limites avouées : manque de robustesse aux manipulations audio et mauvaise généralisation à des auto-encodeurs non vus ; calibration et interprétabilité traitées. Version courte (ICASSP 2025) : une détection à 99,9\,\% sur 2\,500 extraits tirés de 50 pistes MusicGen, hors FMA. &
+\url{https://arxiv.org/abs/2405.04181} \lV\par \url{https://arxiv.org/pdf/2501.10111} \lR\\
+\addlinespace
+Robustesse (juillet 2026) &
+Les détecteurs actuels s'effondrent après changement de vitesse ou de hauteur. La méthode remappe le spectre sur un axe \textbf{logarithmique}, applique \textbf{un seul filtre de corrélation croisée appris + max-pooling} : l'invariance au facteur d'échelle devient structurelle et le facteur de vitesse est estimable. Checkpoints fournis ; licence illisible depuis la page.
+
+\vtwo{} \textit{Lecture par extraction (\lO) :} article d'ISMIR 2026 (Dugelay, Barand, Campeas, Laouar, Afchar, Hennequin). Jeux : Suno~v5 avec FMA-small (5\,000 pistes IA et 5\,000 pistes réelles de 30\,s), puis Suno~v3.5 et Udio~v120 de SONICS (5\,000 chacun). Facteurs de vitesse de $\times0{,}7$ à $\times1{,}4$. Détecteurs comparés : réimplémentation d'Afchar et al., SpecTTTra-$\alpha$ non ré-entraîné, méthode proposée. AUC sur audio propre $\ge0{,}996$ ; entraîné sur audio propre puis testé sous vitesse : AUC $>0{,}93$ partout (0,986 sur Suno~v5), contre 0,745 pour la réimplémentation d'Afchar et al. ; erreur absolue moyenne de $4\times10^{-4}$ sur le facteur de vitesse ; décalage de hauteur : AUC de 0,811 à 0,963, seuil à recalibrer. \textbf{Non testés :} compression MP3 ou codec (indiquée comme non testée, section~6.3) et bruit additif ; le rééchantillonnage n'est que cité. &
+\url{https://arxiv.org/abs/2607.27454} \lV\par \url{https://arxiv.org/pdf/2607.27454} \lO\par \url{https://github.com/thomas0barand/robust-deepfake-detector} \lV\\
+\addlinespace
+FakeMusicCaps &
+27\,605 extraits de 10\,s (environ 77\,h), 12,9\,Go sur Zenodo, générés depuis les légendes de MusicCaps par \textbf{MusicGen, MusicLDM, AudioLDM2, Stable Audio Open, Mustango}.
+
+\vtwo{} \textit{Format (\lO) :} chaque piste est convertie en \textbf{mono}, rééchantillonnée à \textbf{16\,kHz} et enregistrée en \textbf{WAV flottant 32 bits}. MusicCaps compte environ 5,5\,k clips de 10\,s issus d'AudioSet. Le papier emploie les clips réels comme sixième classe à l'entraînement mais \textbf{ne précise pas s'ils figurent dans l'archive publiée} : à vérifier au téléchargement ; des papiers tiers citent 5\,521 (ou 5\,373) clips humains (\lR), et une musique d'ambiance sans paroles (\lR). Détecteurs de base du papier : M5 (environ 0,5\,M de paramètres), RawNet2, ResNet18 sur log-spectrogramme (STFT de 512 points, fenêtre de Hann de 512, saut de 128). Test fermé de 320 pistes disjointes de l'entraînement (légendes présentes aussi dans SunoCaps) ; test ouvert avec des extraits Suno ; étude de la taille de fenêtre (10\,/\,7,5\,/\,5\,/\,2,5\,s). Fréquences natives : Mustango 16\,kHz, Stable Audio Open 44,1\,kHz stéréo ; celles des trois autres ne sont pas indiquées. Version Zenodo~v2 en accès ouvert, v1 à accès restreint (\lR). &
+\url{https://arxiv.org/abs/2409.10684} \lV\par \url{https://arxiv.org/pdf/2409.10684} \lO\par \url{https://zenodo.org/record/13732524/latest} \lV\par \url{https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12295441/} \lR\\
+\addlinespace
+FMA &
+\texttt{fma\_small} : 8\,000 pistes de 30\,s en \textbf{MP3} (7,2\,Go), 8 genres, artiste et genre dans \texttt{tracks.csv}. Audio sous la licence choisie par chaque artiste ; usage recherche. &
+\url{https://github.com/mdeff/fma} \lV\\
+\addlinespace
+SONICS &
+$\approx$97\,000 titres dont plus de 49\,000 générés par Suno/Udio. Le dépôt ne fournit que les titres synthétiques ; les vrais sont à télécharger par identifiant YouTube. Entraînement de référence : 150\,Go de disque, 48\,Go de GPU $\rightarrow$ \textbf{hors budget} ; on n'utilise que les \textbf{checkpoints pré-entraînés} (SpecTTTra, MIT) et, en extension, ses faux titres comme test hors distribution. &
+\url{https://arxiv.org/abs/2408.14080} \lV\par \url{https://github.com/awsaf49/sonics} \lV\\
+\addlinespace
+AI-OpenBMAT &
+3\,294 extraits d'une minute (54,9\,h) imitant la télévision, avec continuations Suno~v3.5 ; les détecteurs existants passent sous 60\,\% de F1 quand la musique est en arrière-plan ou courte. \textbf{Accès et licence non précisés} : à vérifier. &
+\url{https://arxiv.org/abs/2602.06823} \lV\\
+\addlinespace
+MusicGen &
+Utilise \textbf{EnCodec} comme tokenizer audio (RVQ), un LM Transformer monoétage et des schémas d'entrelacement de codebooks ; 32\,kHz. (Confirme l'hypothèse \og{}MusicGen s'appuie sur EnCodec\fg{}.) \vtwo{} Souvenir à confirmer dans le papier : il s'agit d'un EnCodec \textbf{dédié à 32\,kHz} (musique, 4 codebooks à 50\,Hz), pas du modèle 24\,kHz par défaut (\lM). &
+\url{https://arxiv.org/abs/2306.05284} \lR\\
+\end{longtable}}
+
+\subsection{Positionnement par rapport à l'existant\vtwo}\label{sec:position}
+
+{\footnotesize
+\begin{longtable}{L{3.3cm}L{7.2cm}L{5.0cm}}
+\toprule
+\textbf{Travail} & \textbf{Ce qu'il fait} & \textbf{Relation avec le projet}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Travail} & \textbf{Ce qu'il fait} & \textbf{Relation avec le projet}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Afchar et al.\ (arXiv 2024 ; ICASSP 2025) &
+Détecteur appris sur \og{}audio réel contre sa reconstruction par un auto-encodeur\fg{} ; 99,8\,\% de précision ; manque de robustesse et de généralisation inter-familles reconnus. &
+Principe d'entraînement que le projet \textbf{réplique}. Le projet teste ses limites avec un banc extérieur (FakeMusicCaps) et un contrôle de raccourcis.\\
+\addlinespace
+Explication de Fourier (ISMIR 2025) &
+Cause architecturale des pics spectraux ; critère de détection par empreinte (fakeprint). &
+Base de M1.\\
+\addlinespace
+Robustesse (ISMIR 2026) &
+Axe log-fréquence + un filtre de corrélation croisée + max-pooling ; invariance à la vitesse ; teste vitesse et hauteur seulement. &
+Base de M3. La compression MP3 y est non testée : le projet comble ce trou.\\
+\addlinespace
+MusicDET (ICML 2026) &
+Détection \og{}zéro-shot\fg{} : entraînée \emph{exclusivement} sur de la musique réelle, par flots normalisants guidés en fréquence ; évaluée notamment sur les cinq sous-ensembles de FakeMusicCaps. &
+Cadrage très proche (\og{}appris sans faux\fg{}). Comparaison conceptuelle seulement ; pas de réimplémentation. \lR\\
+\addlinespace
+\og{}Probing Token Spaces under Generator Shift\fg{} (arXiv 2606.08663, 7 juin 2026) &
+Traite l'espace de jetons de codec comme axe expérimental principal sous changement de générateur (EnCodec, DAC, X-Codec mini) ; les codecs entraînés sur de la musique généralisent mieux entre générateurs. &
+Justifie le choix de plusieurs codecs et l'idée d'ajouter un codec musical en niveau~3. \lR\\
+\addlinespace
+ArtifactNet (arXiv 2604.16254) &
+Petit UNet (3,6\,M de paramètres) qui extrait les résidus de codec ; l'entraînement conscient du codec (augmentation WAV/MP3/AAC/Opus) réduit fortement la dérive de probabilité entre codecs. &
+Référence pour l'ablation \og{}augmentations\fg{} et pour l'effet MP3. \lR\\
+\end{longtable}}
+
+\textbf{Ce que le projet apporte de propre} (à reprendre dans le rapport) :
+\begin{itemize}
+\item la matrice détecteur $\times$ générateur sur FakeMusicCaps avec des décodeurs de référence déclarés à l'avance ;
+\item un contrôle négatif de raccourcis \textbf{chiffré} (M0-brut et M0-résiduel) ;
+\item des hypothèses datées et des conditions de réfutation avant toute expérience ;
+\item un test de la représentation log-fréquence sous MP3 et sur données reconstruites ;
+\item un rapport de calcul (heures de GPU et stockage) par expérience.
+\end{itemize}
+Les hypothèses prévisibles sont acceptables : la valeur est dans la \textbf{mesure propre}, l'\textbf{ablation} et l'\textbf{analyse d'erreurs}.
+
+\subsection{Hypothèses à écrire \emph{avant} d'entraîner (pré-enregistrement)}\label{sec:hyp}
+
+\textit{Note :} la condition de réfutation de chaque hypothèse est une \textbf{proposition de ce dossier} ; la version d'origine du projet donne les quatre hypothèses sans condition de réfutation chiffrée. À valider et chiffrer en semaine~1.
+
+\begin{hyp}{H1 -- Les artefacts sont propres à l'architecture}
+\textbf{Énoncé.} Un détecteur appris sur un générateur transfère mieux vers des générateurs dont le \textbf{décodeur lui ressemble} que vers les autres. On documente le décodeur de chacun des 5 modèles à partir de leurs papiers (§\ref{sec:generateurs}) et on relie la similarité à l'AUC croisée.
+
+\textbf{Ce qui la réfute.} Pas de lien monotone entre similarité de décodeur et AUC croisée (corrélation de rang nulle ou négative sur la matrice).
+
+\textbf{Précisions}\vtwo.
+\begin{itemize}
+\item Les familles de décodeurs sont \textbf{déclarées avant de voir les résultats} (fichier daté). Avec 5 générateurs et 3 familles probables, la corrélation de rang a très peu de puissance : on la rapporte à titre \emph{descriptif} et on met en avant la comparaison \textbf{AUC intra-famille contre inter-famille}, avec intervalle de confiance sur la différence.
+\item Condition \og{}\textbf{décodeur oracle}\fg{} (niveau~2) : reconstruire FMA avec le décodeur même du générateur testé (EnCodec 32\,kHz pour MusicGen, VAE de Stable Audio Open, vocodeur HiFi-GAN pour les modèles à vocodeur). Le test devient direct.
+\item Seul le lien MusicGen $\leftrightarrow$ EnCodec est propre au départ ; les autres rapprochements sont à confirmer dans les papiers.
+\end{itemize}
+\end{hyp}
+
+\begin{hyp}{H2 -- Transfert partiel depuis les codecs vers FakeMusicCaps}
+\textbf{Énoncé.} Un détecteur appris sur \textbf{FMA contre FMA ré-encodé par EnCodec ou DAC} détecte \emph{une partie} de FakeMusicCaps, surtout les modèles passant par un codec proche, et peu les autres.
+
+\textbf{Ce qui la réfute.} AUC proche de 0,5 sur tous les générateurs, ou AUC aussi élevée sur les modèles sans codec proche que sur MusicGen.
+
+\textbf{Précisions}\vtwo.
+\begin{itemize}
+\item La détection de MusicGen par un détecteur entraîné sur reconstructions est déjà rapportée (99,9\,\% dans le cadre d'Afchar et al.) : la prédiction \emph{non triviale} porte sur les quatre autres générateurs.
+\item \textbf{Contrôle positif obligatoire :} FakeMusicCaps est limité à 0--8\,kHz. Il faut donc d'abord vérifier que le détecteur reste bon \emph{dans le domaine}, sur des reconstructions FMA tenues de côté (artistes de test) ramenées à 16\,kHz. Si l'AUC y est déjà faible, un échec sur FakeMusicCaps vient de la perte de bande, pas d'un défaut de transfert.
+\end{itemize}
+\end{hyp}
+
+\begin{hyp}{H3 -- Une part de la précision \og{}naïve\fg{} vient de raccourcis}
+\textbf{Énoncé.} Une part de la précision naïve vient de \textbf{raccourcis} : format (MP3 contre WAV), fréquence d'échantillonnage native, bande passante, volume, durée. Un classifieur qui ne voit que ces métadonnées (M0) atteint déjà une AUC significative ; corriger des raccourcis la fait chuter.
+
+\textbf{Ce qui la réfute.} L'IC bootstrap de l'AUC de M0 contient 0,5 \emph{et} la correction des raccourcis ne change pas l'AUC des autres détecteurs.
+
+\textbf{Précisions}\vtwo.
+\begin{itemize}
+\item M0 existe en deux versions. \textbf{M0-brut} : métadonnées \emph{avant} normalisation (durée, format, fréquence). Sur FMA contre FakeMusicCaps, il donne une AUC proche de 1 \emph{par construction} (30\,s contre 10\,s, 44,1 contre 16\,kHz, MP3 contre WAV) : c'est un contrôle de cohérence, pas un résultat. \textbf{M0-résiduel} : caractéristiques qui subsistent \emph{après} la chaîne de normalisation (rolloff spectral, RMS ou loudness, taux de silence, plancher de bruit, clipping, décalage continu). L'hypothèse H3 est portée par M0-résiduel.
+\item La réfutation s'évalue avec des IC \textbf{par groupe} (artiste, légende), voir §\ref{sec:eval}.
+\end{itemize}
+\end{hyp}
+
+\begin{hyp}{H4 -- La log-fréquence résiste à la vitesse, pas forcément au MP3}
+\textbf{Énoncé.} Les détecteurs à \textbf{spectre linéaire} s'effondrent après changement de vitesse ; la représentation \textbf{log-fréquence + max-pooling} y résiste mieux, mais pas nécessairement à la compression MP3 ni au bruit.
+
+\textbf{Ce qui la réfute.} M3 ne résiste pas mieux que M1/M2 à la vitesse, ou M3 résiste aussi bien au MP3 (ce qui contredirait la nuance).
+
+\textbf{Précisions}\vtwo.
+\begin{itemize}
+\item Mécanisme : un changement de vitesse de facteur $a$ multiplie l'axe fréquentiel, donc sur un axe logarithmique il devient une translation :
+\[
+f' = a\,f \;\Longrightarrow\; \log f' = \log f + \log a .
+\]
+Une corrélation croisée suivie d'un max-pooling est invariante à cette translation.
+\item Le papier de référence ne teste \textbf{ni le MP3 ni le bruit} (\lO) : la nuance sur le MP3 est une \emph{prédiction du projet}, pas un résultat établi.
+\item Repères chiffrés du papier (à relire) : entraîné sur audio propre et testé sous vitesse, AUC $>0{,}93$ pour la méthode, 0,745 pour la réimplémentation d'Afchar et al. sur Suno~v5.
+\item Le niveau~1 couvre l'effondrement sous vitesse de M1 et M2 ; la comparaison avec M3 est au niveau~2.
+\end{itemize}
+\end{hyp}
+
+\paragraph{À faire en semaine 1.} \textbf{Chiffrer} \og{}significatif\fg{} et \og{}mieux\fg{} (par exemple : \og{}AUC de M0 dont l'intervalle de confiance bootstrap à 95\,\% exclut 0,5\fg{} ; \og{}écart d'AUC supérieur à l'IC\fg{}), puis \textbf{dater et figer} le texte avant tout entraînement.
+
+\begin{corr}{Propositions de seuils par défaut\vtwot (à confirmer et dater en semaine 1)}
+\begin{itemize}
+\item \textbf{Significatif} : l'IC à 95\,\% de l'AUC (bootstrap \emph{par groupe}) exclut 0,5.
+\item \textbf{Mieux / chute} : l'IC à 95\,\% de la \emph{différence} d'AUC (bootstrap apparié, mêmes groupes) exclut 0.
+\item \textbf{Détecte} (H2) : borne basse de l'IC à 95\,\% de l'AUC supérieure à 0,6 (seuil arbitraire à fixer ; l'important est de le figer avant les résultats).
+\item \textbf{Fichier de pré-enregistrement} : un fichier daté (par exemple un commit Git) contenant les quatre hypothèses, leurs réfutations chiffrées, le classement des générateurs en familles de décodeurs et une fourchette d'AUC attendue par cellule de la matrice.
+\end{itemize}
+\end{corr}
+\subsection{Détecteurs à comparer}\label{sec:detecteurs}
+
+{\small
+\begin{longtable}{L{1.2cm}L{6.4cm}L{5.6cm}L{1.9cm}}
+\toprule
+\textbf{Modèle} & \textbf{Entrée} & \textbf{Rôle} & \textbf{Niveau}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Modèle} & \textbf{Entrée} & \textbf{Rôle} & \textbf{Niveau}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\textbf{M0} & Métadonnées seules (format, fréquence d'échantillonnage, durée, volume, bande passante). \vtwo{} Deux versions : \textbf{M0-brut} (avant normalisation) et \textbf{M0-résiduel} (caractéristiques restantes après la chaîne de normalisation : rolloff, RMS ou loudness, silence, plancher de bruit, clipping, décalage continu). & Mesure du raccourci (contrôle négatif). M0-brut est un contrôle de cohérence ; M0-résiduel est l'instrument. & \nA\\
+\addlinespace
+\textbf{M1} & Empreinte spectrale moyenne (\og{}fakeprint\fg{}) + classifieur linéaire. \vtwo{} Évalué (a) à 16\,kHz pour la matrice $5\times5$, (b) en pleine bande sur FMA seul (condition~B). & Reproduction de l'article de Fourier. & \nA\\
+\addlinespace
+\textbf{M2} & Petit CNN ($<1$\,M de paramètres) sur spectrogramme. & Baseline apprise. & \nA\\
+\addlinespace
+\textbf{M3} & Axe log-fréquence, un filtre de corrélation croisée, max-pooling. & Mini-réimplémentation de l'article de robustesse. & \nB\\
+\addlinespace
+\textbf{M4} & SpecTTTra pré-entraîné de SONICS. \vtwo{} Vérifier dans le dépôt la fréquence d'échantillonnage et la durée d'entrée attendues par le checkpoint avant de l'appliquer à FakeMusicCaps (16\,kHz, 10\,s). & Référence externe, \textbf{inférence seule}. & \nB\\
+\end{longtable}}
+
+\subsection{Données et chaîne de traitement}\label{sec:donnees}
+\begin{enumerate}
+\item \textbf{Réel} : FMA-small (MP3, 30\,s). Découpage \textbf{train/val/test par artiste} (jamais le même artiste des deux côtés).
+\item \textbf{Faux de substitution} : ré-encoder FMA-small avec EnCodec et DAC (niveau~1), à 2--3 débits. Plan B si trop lourd : 2\,000 pistes au lieu de 8\,000. \vtwo{} Mimi est repoussé au niveau~3 : d'après ce que l'on en sait, c'est un codec orienté parole, à vérifier pour de la musique (\lM). Pour le lien avec MusicGen, préférer, en plus du modèle 24\,kHz, le checkpoint EnCodec \textbf{32\,kHz} destiné à la musique (\lM, à confirmer dans le papier MusicGen).
+\item \textbf{Faux de test} : FakeMusicCaps (5 générateurs), mono, 16\,kHz. \vtwo{} \textbf{Négatifs réels de test :} R$_{\text{FMA}}$ (split de test de FMA) et R$_{\text{MC}}$ (clips réels de MusicCaps, s'ils figurent dans l'archive, sinon à récupérer à part). L'écart de taux de faux positifs entre R$_{\text{FMA}}$ et R$_{\text{MC}}$ mesure le décalage de domaine.
+\item \textbf{Chaîne de normalisation commune} appliquée à \emph{tout} (même rééchantillonnage, même passage MP3 si besoin, même normalisation de volume, même durée de segment), pour que M0 ne puisse pas \og{}tricher\fg{} et pour prouver l'effet quand on la retire.
+\end{enumerate}
+
+\begin{corr}{Détail de la chaîne de normalisation\vtwot}
+\textbf{Condition A (principale, comparable à FakeMusicCaps).}
+\begin{itemize}
+\item Mono, 16\,kHz, segments de durée fixe (10\,s par défaut), calcul en flottants 32 bits, même normalisation de volume (RMS ou LUFS : choisir une fois, documenter), même rééchantillonneur avec les mêmes paramètres de filtre.
+\item \textbf{Aller-retour identique réel/faux.} Pour un codec de fréquence native $f_c$ : le \emph{faux} suit FMA $\rightarrow f_c \rightarrow$ codec (encodeur et décodeur) $\rightarrow$ 16\,kHz ; le \emph{réel} suit FMA $\rightarrow f_c \rightarrow$ 16\,kHz (même filtre, même chemin, sans codec). La seule différence est le codec. Pour un codec déjà à 44,1\,kHz (DAC) : réel = FMA $\rightarrow$ 16\,kHz ; faux = FMA $\rightarrow$ DAC $\rightarrow$ 16\,kHz.
+\item Retirer la chaîne (ablation) revient à laisser parler les raccourcis : format, durée, bande passante.
+\end{itemize}
+\textbf{Condition B (secondaire, FMA seul).} Pleine bande (24 ou 44,1\,kHz selon le codec, mêmes règles d'aller-retour) pour reproduire M1 comme dans l'article de Fourier et pour l'ablation \og{}bandes de pics retirées/conservées\fg{}. Pas de test FakeMusicCaps ici (tronqué à 8\,kHz) ; le transfert en pleine bande se teste sur des titres SONICS au niveau~3 (fréquence d'échantillonnage de SONICS à vérifier).
+
+\textbf{Condition C (MP3 commun).} Faire passer toutes les classes de tous les jeux (FMA réel et reconstruit, FakeMusicCaps réel et faux) par le même encodage-décodage MP3 (même encodeur, même débit, retard de l'encodeur compensé), pour que l'historique de compression soit identique partout. À utiliser surtout pour l'attaque MP3 et pour le contrôle de H3.
+
+\textbf{Découpages.}
+\begin{itemize}
+\item \textbf{FMA : par artiste.} Une piste et toutes ses reconstructions restent du même côté.
+\item \textbf{FakeMusicCaps : par légende} (et par vidéo source si les identifiants sont disponibles). La même légende produit un clip par générateur : tous ces clips et le clip réel correspondant restent du même côté, et la séparation de légendes est identique pour tous les générateurs. Sans cela, la matrice $5\times5$ fuit.
+\end{itemize}
+\textbf{Journal de décisions.} Chaque choix de normalisation (rééchantillonneur, volume, durée, MP3) est consigné dans un tableau daté ; il fait partie des livrables.
+\end{corr}
+
+\needspace{9\baselineskip}
+\subsection{Protocole en 4 semaines}\label{sec:protocole}
+
+{\small
+\begin{longtable}{L{2.4cm}L{10.6cm}L{2.3cm}}
+\toprule
+\textbf{Semaine} & \textbf{Travail} & \textbf{Niveau}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Semaine} & \textbf{Travail} & \textbf{Niveau}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\textbf{1 -- banc d'essai} & Relever format, fréquence d'échantillonnage, durée de chaque jeu ; lancer M4 sur FMA et FakeMusicCaps ; reproduire M1 ; écrire la proposition et les prédictions. \vtwo{} Ajouts : ouvrir l'archive FakeMusicCaps (les clips réels y sont-ils ?) ; \textbf{chronométrer} le ré-encodage de 50 pistes par codec et calculer le stockage (§\ref{sec:budget}) ; chiffrer et dater les hypothèses. & \nA{} (M4 : \nB)\\
+\addlinespace
+\textbf{2 -- données} & Ré-encoder FMA-small (EnCodec, DAC, 2--3 débits ; Mimi au niveau~3) ; split par artiste ; chaîne de normalisation commune. & \nA\\
+\addlinespace
+\textbf{3 -- expériences centrales} & Entraîner M1 et M2 ; matrice de généralisation $5\times5$ entre générateurs ; contrôles de raccourci (H3). & \nA\\
+\addlinespace
+\textbf{4 -- robustesse et restitution} & Attaques (vitesse, hauteur, MP3, rééchantillonnage) ; M3 ; analyse d'erreurs ; test d'écoute ; rapport et soutenance. & \nA{} (M3, écoute : \nB)\\
+\end{longtable}}
+
+\textbf{Lecture de la matrice $5\times5$\vtwo.} Lignes : détecteur entraîné sur un générateur de FakeMusicCaps (borne supérieure supervisée) ; lignes complémentaires : entraîné sur EnCodec, sur DAC, sur EnCodec+DAC. Colonnes : générateur testé, plus deux colonnes de faux positifs (R$_{\text{FMA}}$ et R$_{\text{MC}}$).
+
+\subsection{Ablations}\label{sec:ablations}
+Au moins deux axes, \textbf{un seul facteur varié à la fois}.
+
+{\small
+\begin{longtable}{L{3.0cm}L{7.2cm}L{2.8cm}L{1.9cm}}
+\toprule
+\textbf{Axe} & \textbf{Valeurs} & \textbf{Hypothèse testée} & \textbf{Niveau}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Axe} & \textbf{Valeurs} & \textbf{Hypothèse testée} & \textbf{Niveau}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Faux d'entraînement & EnCodec seul, DAC seul, les deux, un générateur de FakeMusicCaps. \vtwo{} Au niveau~2 : décodeur oracle du générateur testé. & H1, H2 & \nA\\
+\addlinespace
+Chaîne de normalisation\vtwo & avec / sans (raccourcis laissés libres) & H3 & \nA\\
+\addlinespace
+Représentation & spectre linéaire / axe log-fréquence & H4 & \nB\\
+\addlinespace
+Durée du segment & 5, 10, 30\,s. \vtwo{} FakeMusicCaps ne dure que 10\,s : sur le jeu de test, utiliser 2,5\,/\,5\,/\,10\,s (le papier FakeMusicCaps teste 10, 7,5, 5 et 2,5\,s) ; 30\,s uniquement pour l'analyse FMA seule. & H3, H4 & \nB\\
+\addlinespace
+Pics spectraux & bandes retirées / conservées (en condition~B, pleine bande, car la bande 0--8\,kHz limite l'effet) & H1 (rôle causal) & \nB\\
+\addlinespace
+Augmentations d'entraînement & aucune, vitesse, MP3 (ArtifactNet donne un repère avec l'augmentation WAV/MP3/AAC/Opus) & H4 & \nB\\
+\end{longtable}}
+
+\subsection{Analyse d'erreurs et évaluation}\label{sec:eval}
+\begin{itemize}
+\item Matrice de confusion \textbf{par générateur}.
+\item Faux positifs sur le réel \textbf{par genre FMA} (hypothèse à tester : la musique électronique tonale déclenche des pics spectraux naturels).
+\item Dérive du seuil de décision sous attaque.
+\item Empreintes moyennes par classe.
+\item Écoute de \textbf{20 extraits mal classés}. \vtwo{} Les choisir sans biais : tirage aléatoire stratifié parmi les erreurs (par générateur ou par genre), graine fixée et consignée.
+\item Métriques : \textbf{AUC, EER, taux de vrais positifs à 1\,\% de faux positifs}.
+\item Test d'écoute : \textbf{15 auditeurs $\times$ 20 extraits} (réel ou IA ?), comparaison avec le détecteur, et vérification que la difficulté humaine suit la confiance du détecteur. \vtwo{} Niveau~2. Prévoir que les clips FakeMusicCaps (mono, 16\,kHz, sans paroles) limitent la fidélité perçue : l'interprétation doit le dire.
+\item Rigueur : intervalles de confiance bootstrap \textbf{et} variance entre seeds (deux choses différentes, voir N9).
+\end{itemize}
+
+\begin{corr}{Statistiques à appliquer\vtwot}
+\begin{itemize}
+\item \textbf{Bootstrap par groupe.} Rééchantillonner des \emph{groupes} (artiste pour FMA, légende ou piste pour FakeMusicCaps), jamais des segments : plusieurs segments d'une même piste, ou plusieurs pistes d'un même artiste, ne sont pas indépendants, et un bootstrap par segment donne des intervalles trop étroits.
+\item \textbf{Comparaison appariée.} Pour dire qu'un détecteur est \og{}mieux\fg{} qu'un autre, calculer l'IC de la \emph{différence} d'AUC avec les mêmes groupes tirés pour les deux (bootstrap apparié, ou test de DeLong).
+\item \textbf{Seeds.} Au moins 3 seeds d'entraînement (3 à 5 en proposition), rapportées à part de l'IC de bootstrap : le bootstrap mesure la variabilité des \emph{données de test}, les seeds mesurent celle de l'\emph{entraînement}.
+\item \textbf{Comparaisons multiples.} La matrice et les ablations produisent beaucoup de comparaisons : soit une correction (par exemple Holm), soit un classement explicite des résultats comme \emph{exploratoires}.
+\item \textbf{Calibration.} ECE et temperature scaling (voir N8), et rapporter le seuil choisi sur la validation avec sa dérive sous attaque.
+\end{itemize}
+\end{corr}
+
+\subsection{Extensions, budget, risques, licences}\label{sec:ext}
+
+\paragraph{Extensions (niveau 3).} Test hors distribution sur faux titres SONICS (Suno, Udio) ou sur AI-OpenBMAT si l'accès est accordé ; extraits courts de 5\,s ; estimation du facteur de vitesse comme dans l'article de robustesse. \vtwo{} Codecs supplémentaires : Mimi, et un codec entraîné sur de la musique (par exemple X-Codec mini, cité par l'étude sur les espaces de jetons, \lR) ; comparaison conceptuelle avec la détection \og{}zéro-shot\fg{} de MusicDET.
+
+\paragraph{Budget de calcul.}\label{sec:budget} $\approx$ 15--25\,h de GPU T4 (ré-encodage, petits modèles) + CPU pour les attaques. \textit{Estimation personnelle à valider en semaine~1.} \vtwo{} La valider par un \textbf{chronométrage} du ré-encodage de 50 pistes par codec, extrapolé au nombre de pistes et de débits retenus. Colab ne garantit pas le GPU attribué ; checkpoint sur Drive toutes les 15\,min ; scripts reprenables.
+
+\begin{corr}{Budget de stockage (absent de la version 1)\vtwot}
+Calcul brut, audio PCM 16 bits non compressé, \emph{hors} caractéristiques extraites. Durée par piste : 30\,s ; débit : 32\,000 octets/s en 16\,kHz mono, 176\,400 octets/s en 44,1\,kHz stéréo. Estimation personnelle de la révision, à refaire avec les chiffres réels de la semaine~1.
+
+\begin{center}
+\small
+\begin{tabular}{rrrrr}
+\toprule
+\textbf{Pistes} & \textbf{Configurations de codec} & \textbf{Audio} & \textbf{16\,kHz mono} & \textbf{44,1\,kHz stéréo}\\
+\midrule
+8\,000 & 4 & 267\,h & 30,7\,Go & 169\,Go\\
+8\,000 & 9 & 600\,h & 69,1\,Go & 381\,Go\\
+2\,000 & 4 & 67\,h & 7,7\,Go & 42\,Go\\
+2\,000 & 9 & 150\,h & 17,3\,Go & 95\,Go\\
+\bottomrule
+\end{tabular}
+\end{center}
+Une configuration est un couple (codec, débit). Conséquences : \textbf{ne pas stocker les ondes reconstruites} ; calculer les spectres ou fakeprints à la volée, ou stocker des spectrogrammes en demi-précision, ou archiver en FLAC 16\,kHz (taille à mesurer) ; démarrer avec 3 ou 4 configurations ; le plan B à 2\,000 pistes devient le choix par défaut si le disque est limité.
+\end{corr}
+
+\paragraph{Risques.}
+\begin{itemize}
+\item \textbf{Risque principal -- fuite de format.} FMA est en MP3 ; le format de FakeMusicCaps est à vérifier. Si les formats diffèrent, tout passer par la même chaîne MP3 + même rééchantillonnage avant d'entraîner ; M0 sert à le prouver. \vtwo{} Le format est désormais connu (WAV flottant 32 bits, mono, 16\,kHz) : tout est ramené à cette cible (§\ref{sec:donnees}) ; M0-brut le prouve, M0-résiduel mesure ce qui reste.
+\item \textbf{Risque -- décalage de genres.} FakeMusicCaps ne fournit pas forcément de contreparties réelles ; le réel vient de FMA ; à discuter explicitement. \vtwo{} Des clips réels MusicCaps sont employés dans le papier mais leur présence dans l'archive est à vérifier ; le contenu est de la musique d'ambiance sans paroles d'après un papier tiers, alors que FMA couvre 8 genres : utiliser R$_{\text{MC}}$ à côté de R$_{\text{FMA}}$.
+\item \vtwo{} \textbf{Risque -- perte de bande.} La bande 0--8\,kHz supprime les pics de haute fréquence et la coupure passe-bas du MP3 : contrôle positif en domaine (H2) et condition~B sur FMA seul.
+\item \vtwo{} \textbf{Risque -- stockage et durée de calcul.} Voir le budget ci-dessus.
+\item \vtwo{} \textbf{Risque -- puissance statistique de H1.} Peu de générateurs, peu de familles : conclure avec prudence, privilégier la condition oracle.
+\item \vtwo{} \textbf{Risque -- charge de travail.} Respecter les niveaux de priorité (§\ref{sec:niveaux}).
+\end{itemize}
+
+\paragraph{Licences.} Les deux dépôts Deezer sont CC BY-NC ; celui d'ISMIR 2025 mentionne deux demandes de brevet. \textbf{Réimplémenter depuis l'article, usage pédagogique uniquement, pas de réutilisation commerciale.} \vtwo{} Licence de l'archive FakeMusicCaps (Zenodo) et licence du code de MusicDET : non relevées, à vérifier avant tout usage ; licence du dépôt de robustesse illisible depuis la page.
+
+\subsection{Livrables et ligne de CV}\label{sec:livrables}
+Livrables : dépôt public (code propre, README), notebook, figure de la matrice de généralisation, rapport avec hypothèses datées, ablations, analyse d'erreurs, compte rendu du test d'écoute, rapport de calcul (heures de GPU par expérience). \vtwo{} Ajouts : le fichier de pré-enregistrement daté, le journal de décisions de normalisation, le bilan de stockage.
+
+Ligne de CV à adapter :
+
+\begin{info}{Ligne d'origine}
+\textit{AI-music detection: reimplemented a spectral-fingerprint detector, built codec-resynthesis training data (EnCodec, DAC, Mimi), measured cross-generator generalization on 5 open text-to-music models, quantified dataset shortcuts with a metadata-only baseline, and evaluated robustness to speed, pitch and MP3 attacks.}
+\end{info}
+
+\begin{corr}{Variante cohérente avec la version 2}
+\textit{AI-music detection (replication and extension of a codec-resynthesis detector): built codec-resynthesis training data (EnCodec, DAC), measured cross-generator generalization on 5 open text-to-music models (FakeMusicCaps), quantified dataset shortcuts with a metadata-only baseline, and evaluated robustness to speed, pitch and MP3 attacks.}
+
+N'ajouter Mimi, M3 ou la comparaison avec SpecTTTra que si ces éléments ont réellement été faits (niveaux 2 et 3).
+\end{corr}
+\section{Prérequis supposés et auto-diagnostic}\label{sec:prereq}
+
+On suppose acquis (M2 IA) : CNN, Transformers, rétropropagation, PyTorch, classification binaire, courbes ROC de base, NumPy/pandas. Test en 10 questions (à faire sans notes ; ce qui coince indique ce qu'il faut revoir) :
+
+\begin{enumerate}
+\item Que calcule une convolution 2D ? Quel est le champ réceptif après 3 couches $3\times3$ ?
+\item Que fait un max-pooling et à quelle transformation donne-t-il une invariance (approximative) ?
+\item Pourquoi une convolution transposée peut-elle produire des motifs périodiques ?
+\item Définis AUC, TPR, FPR. Que signifie \og{}AUC = 0,5\fg{} ?
+\item Écris la perte d'un GAN standard.
+\item Pourquoi sépare-t-on train/test \og{}par groupe\fg{} (ici artiste) et pas au hasard ?
+\item Qu'est-ce qu'un intervalle de confiance bootstrap ? Que ne dit-il pas ?
+\item Que signifie \og{}classifieur calibré\fg{} ?
+\item Qu'est-ce qu'un auto-encodeur ? Qu'ajoute un VAE ?
+\item Qu'est-ce qu'une quantification vectorielle ($K$ centroïdes) ?
+\item \vtwo{} Énonce le théorème de convolution pour la DFT. (Si cela coince : notion N25.)
+\item \vtwo{} Pourquoi un bootstrap par segment sous-estime-t-il l'incertitude quand plusieurs segments viennent de la même piste ? (Si cela coince : notion N26.)
+\end{enumerate}
+
+Si plus de 3 réponses vacillent sur les points 1--2, 5, 9--10 : revoir d'abord CS231n (\url{http://cs231n.stanford.edu} \lV) ou les notes CS236 sur VAE/GAN (\url{https://deepgenerativemodels.github.io/notes/index.html} \lV).
+
+\section{Carte des notions à maîtriser}\label{sec:notions}
+
+Chaque notion a un \textbf{identifiant} (N1\ldots N24, puis N25\ldots N28 ajoutés en version~2\vtwo) que la nouvelle session utilise pour écrire un cours dédié. \og{}Pourquoi\fg{} relie la notion à une hypothèse ou une ablation. Les identifiants N1--N24 sont inchangés pour que l'ordre de la section~\ref{sec:mode} reste valable.
+
+\subsection{A. Signal audio}
+{\footnotesize
+\begin{longtable}{L{0.95cm}L{4.1cm}L{4.6cm}L{2.2cm}L{3.3cm}}
+\toprule
+\textbf{ID} & \textbf{Notion} & \textbf{Pourquoi (lien projet)} & \textbf{Niveau} & \textbf{Ressources (détails §\ref{sec:prog})}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Notion} & \textbf{Pourquoi (lien projet)} & \textbf{Niveau} & \textbf{Ressources}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\textbf{N1} & Échantillonnage, Nyquist, repliement (aliasing), quantification & Sample rate natif = raccourci (H3) ; réplicas lors du rééchantillonnage & Comprendre + calculer & Velardo ; MVA index §2 ; HF audio course unité 1\\
+\addlinespace
+\textbf{N2} & DFT/FFT, fenêtrage, STFT, compromis temps-fréquence & Base de tous les détecteurs & Comprendre + implémenter & MVA index §2 ; FMP ; JOS\\
+\addlinespace
+\textbf{N3} & Spectrogramme (magnitude/phase), dB, échelle \textbf{mel}, axe \textbf{log-fréquence}, \textbf{CQT} & Choix de représentation (ablation \og{}linéaire contre log\fg{}) ; M3 & Comprendre + implémenter & MVA index §2--3 ; FMP ; Müller et al.\ 2022\\
+\addlinespace
+\textbf{N4} & Rééchantillonnage ; \textbf{changement de vitesse} contre pitch-shift contre time-stretch ; effet sur le spectre & Attaques de H4 ; pourquoi un décalage de vitesse = \textbf{mise à l'échelle multiplicative} de l'axe fréquence & Comprendre + dériver & Lab L3 ; papier de robustesse\\
+\addlinespace
+\textbf{N5} & \textbf{Compression MP3} : MDCT, masquage psychoacoustique, coupure passe-bas, débit & FMA en MP3 $\rightarrow$ raccourci possible ; attaque MP3 & Comprendre (haut niveau) + mesurer & Sources web \lR{} (§\ref{sec:outils}) ; Lab L2\\
+\addlinespace
+\textbf{N25}\vtwo & \textbf{Convolution et théorème de convolution} ; réponse en fréquence d'un filtre ; suréchantillonnage par insertion de zéros ($Y(e^{j\omega})=X(e^{jL\omega})$ : images spectrales) et filtre anti-image & Prérequis réel de N12, N17 et de H1 : explique pourquoi un suréchantillonneur appris laisse des pics périodiques & Comprendre + dériver & JOS \lV ; FMP \lV ; Lab L4\\
+\addlinespace
+\textbf{N27}\vtwo & \textbf{Ingénierie audio pratique} : ffmpeg, filtres de rééchantillonnage (rolloff, fenêtre), normalisation du volume (RMS, LUFS), retard d'encodeur MP3, mono/stéréo, profondeur de bits, entrées/sorties & Sources concrètes de raccourcis (H3) ; chaîne de normalisation commune & Implémenter & Labs L2 et L9 ; documentation des outils \lM\\
+\end{longtable}}
+
+\subsection{B. Apprentissage et évaluation pour l'audio}
+{\footnotesize
+\begin{longtable}{L{0.95cm}L{4.1cm}L{4.6cm}L{2.2cm}L{3.3cm}}
+\toprule
+\textbf{ID} & \textbf{Notion} & \textbf{Pourquoi} & \textbf{Niveau} & \textbf{Ressources}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Notion} & \textbf{Pourquoi} & \textbf{Niveau} & \textbf{Ressources}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\textbf{N6} & \textbf{CNN 2D sur spectrogramme} : champ réceptif, pooling, invariances ; choix de représentation d'entrée & M2 ; comprendre pourquoi la translation en fréquence $\neq$ translation en log-fréquence & Comprendre + implémenter & MVA index §7--8 ; Choi tutorial\\
+\addlinespace
+\textbf{N7} & \textbf{Transformer sur patches de spectrogramme} (AST) ; SpecTTTra en inférence & M4 (référence externe) & Survoler / comprendre & Papier AST ; dépôt SONICS\\
+\addlinespace
+\textbf{N8} & \textbf{Métriques de détection} : ROC, AUC, EER, TPR@1\,\%\,FPR, seuil ; \textbf{calibration} (ECE, temperature scaling) & Toutes les mesures du projet & Implémenter (de zéro) & Guo et al.\ ; Lab L7\\
+\addlinespace
+\textbf{N9} & \textbf{Incertitude} : bootstrap contre variance entre seeds contre variabilité des données ; IC & Rapporter honnêtement des écarts d'AUC & Comprendre + implémenter & Lab L7\\
+\addlinespace
+\textbf{N26}\vtwo & \textbf{Statistiques de comparaison} : bootstrap \emph{par groupe}, bootstrap apparié ou test de DeLong pour la différence d'AUC, comparaisons multiples (Holm) & Chiffrer H1--H4 ; éviter des IC trop étroits (plusieurs segments par piste, plusieurs pistes par artiste) & Comprendre + implémenter & Lab L7 ; DeLong et al.\ 1988 \lM{} (à retrouver)\\
+\end{longtable}}
+
+\subsection{C. Génération audio neuronale (pour comprendre d'où viennent les artefacts)}
+{\footnotesize
+\begin{longtable}{L{0.95cm}L{4.1cm}L{4.6cm}L{2.2cm}L{3.3cm}}
+\toprule
+\textbf{ID} & \textbf{Notion} & \textbf{Pourquoi} & \textbf{Niveau} & \textbf{Ressources}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Notion} & \textbf{Pourquoi} & \textbf{Niveau} & \textbf{Ressources}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\textbf{N10} & \textbf{Auto-encodeur}, \textbf{VAE} (ELBO, reparamétrisation) & Stable Audio Open (VAE), AudioLDM/MusicLDM (VAE sur mel) & Comprendre & CS236 notes VAE ; Weng VAE\\
+\addlinespace
+\textbf{N11} & \textbf{GAN} : pertes adversariales, discriminateurs multi-échelles & Codecs (EnCodec, DAC) et vocodeurs (HiFi-GAN) sont entraînés ainsi & Comprendre & CS236 notes GAN ; papiers codecs\\
+\addlinespace
+\textbf{N12} & \textbf{Couches de suréchantillonnage} : conv transposée, interpolation + conv, sous-pixel ; \textbf{artefacts tonaux} et \textbf{réplicas spectraux} & Cœur de H1 : les \og{}pics spectraux\fg{} viennent d'ici & Comprendre + reproduire (Lab L4) & Pons et al.\ ; Odena et al.\ (Distill)\\
+\addlinespace
+\textbf{N13} & \textbf{Quantification vectorielle}, VQ-VAE, \textbf{RVQ} (quantification vectorielle résiduelle) & Codecs neuronaux & Comprendre + dériver & VQ-VAE ; blog AssemblyAI RVQ ; SoundStream\\
+\addlinespace
+\textbf{N14} & \textbf{Codecs audio neuronaux} : SoundStream, EnCodec, DAC, Mimi ; débit $\leftrightarrow$ nombre de codebooks & Fabrication des faux de substitution & Comprendre + utiliser & Papiers ; Lab L5\\
+\addlinespace
+\textbf{N15} & \textbf{LM sur jetons de codec} (MusicGen) ; entrelacement des codebooks & MusicGen = générateur de test lié à EnCodec & Comprendre & MusicGen\\
+\addlinespace
+\textbf{N16} & \textbf{Diffusion latente audio} (Stable Audio Open, AudioLDM2, MusicLDM, Mustango) ; \textbf{vocodeur} (HiFi-GAN) & 4 des 5 générateurs de test & Survoler + documenter le décodeur & Papiers (§\ref{sec:generateurs}) ; Weng diffusion\\
+\end{longtable}}
+
+\subsection{D. Détection de musique IA}
+{\footnotesize
+\begin{longtable}{L{0.95cm}L{4.1cm}L{4.6cm}L{2.2cm}L{3.3cm}}
+\toprule
+\textbf{ID} & \textbf{Notion} & \textbf{Pourquoi} & \textbf{Niveau} & \textbf{Ressources}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Notion} & \textbf{Pourquoi} & \textbf{Niveau} & \textbf{Ressources}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\textbf{N17} & \textbf{Empreintes spectrales (fakeprints)} et explication de Fourier des artefacts & M1 ; H1 & Comprendre + implémenter & \url{https://arxiv.org/abs/2506.19108}\\
+\addlinespace
+\textbf{N18} & \textbf{Généralisation hors distribution} : matrice croisée détecteur $\times$ générateur ; leave-one-generator-out & H1, H2 & Comprendre + implémenter & Afchar ; FakeMusicCaps ; Müller 2022\\
+\addlinespace
+\textbf{N19} & \textbf{Raccourcis} (shortcut learning) et \textbf{fuites} : format, sr, durée, volume, silence ; split par artiste & H3 & Comprendre + détecter & Geirhos et al.\ ; Müller (silence)\\
+\addlinespace
+\textbf{N20} & \textbf{Baseline métadonnées (M0)} comme contrôle négatif. \vtwo{} Versions brut et résiduel & H3 & Implémenter & Lab L6\\
+\addlinespace
+\textbf{N21} & \textbf{Robustesse} aux attaques ; invariance d'échelle : log-fréquence + corrélation croisée + max-pooling & H4 ; M3 & Comprendre + implémenter (mini) & Papier de robustesse\\
+\addlinespace
+\textbf{N22} & \textbf{Interprétabilité} et analyse d'erreurs ; test d'écoute & Restitution & Implémenter & Afchar ; Lab L8\\
+\addlinespace
+\textbf{N28}\vtwo & \textbf{Détection \og{}zéro-shot\fg{}} (entraînée sur le réel seul, par exemple MusicDET) et cadrage hors distribution & Comparaison conceptuelle avec le protocole du projet & Survoler & MusicDET \lR{} (§\ref{sec:papiers})\\
+\end{longtable}}
+
+\subsection{E. Méthode}
+{\footnotesize
+\begin{longtable}{L{0.95cm}L{4.1cm}L{4.6cm}L{2.2cm}L{3.3cm}}
+\toprule
+\textbf{ID} & \textbf{Notion} & \textbf{Pourquoi} & \textbf{Niveau} & \textbf{Ressources}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Notion} & \textbf{Pourquoi} & \textbf{Niveau} & \textbf{Ressources}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\textbf{N23} & Hypothèse falsifiable, ablation (un facteur à la fois), contrôle positif/négatif, pré-enregistrement & Cadre du projet & Appliquer & §\ref{sec:hyp} ; Geirhos et al.\\
+\addlinespace
+\textbf{N24} & Licences (CC BY-NC, brevets), usage pédagogique ; éthique de la détection & §\ref{sec:ext} & Comprendre & Dépôts Deezer\\
+\end{longtable}}
+\section{Programme d'apprentissage}\label{sec:prog}
+
+\subsection{Ressources de référence}
+{\footnotesize
+\begin{longtable}{L{2.9cm}L{7.3cm}L{5.1cm}}
+\toprule
+\textbf{Ressource} & \textbf{Ce qu'on y prend} & \textbf{Lien}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Ressource} & \textbf{Ce qu'on y prend} & \textbf{Lien}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\textbf{MVA -- G.\ Richard, R.\ Badeau} (Télécom Paris) &
+Slides \og{}Audio indexing\fg{} : 10 sections -- 1 machine listening, \textbf{2 traitement du signal}, \textbf{3 hauteur/harmonie/CQT}, 4 empreintes audio, 5 rythme, \textbf{6 timbre/MFCC}, \textbf{7 deep learning pour l'audio} (CNN, représentations d'entrée, convolutions dilatées/strides, RNN), \textbf{8 exemples DL} (CREPE, U-Nets multipitch, auto-encodeurs/GAN/attention/Transformers), 9 DCASE, 10 synthèse. \emph{Pas de contenu auto-supervisé ni d'évaluation.} &
+Dossier : \url{https://perso.telecom-paristech.fr/grichard/Enseignements/MVA/} \lV\par Slides : \url{https://perso.telecom-paristech.fr/grichard/Enseignements/MVA/2026-MVA_indexation-english.pdf} \lV\\
+\addlinespace
+\textbf{Stanford CS224S} (Spoken Language Processing) &
+Utile pour la \textbf{parole} : vocodeurs, TTS (WaveNet, Tacotron, FastSpeech), wav2vec 2.0, HuBERT. Le syllabus ne donne pas de liens de slides ni de lectures en URL. Option, pas central. &
+\url{https://web.stanford.edu/class/cs224s/index.html} \lV\par Syllabus : \url{https://web.stanford.edu/class/cs224s/semesters/2024-spring/syllabus} \lV\par Slides cours 1 : \url{https://web.stanford.edu/class/cs224s/semesters/2025-spring/lecture-slides/224s.25.lec1.pdf} \lV\\
+\addlinespace
+\textbf{Hugging Face Audio Course} &
+Unités 0--6. Prendre l'unité sur les \textbf{données audio} (échantillonnage, spectrogrammes), puis celle sur les \textbf{architectures Transformers pour l'audio} et celle du \textbf{classifieur de genre}. Titres d'unités de mémoire \lM{} : vérifier sur la page. &
+\url{https://huggingface.co/learn/audio-course} \lV\par \url{https://huggingface.co/learn/audio-course/chapter3} \lV\\
+\addlinespace
+\textbf{Fundamentals of Music Processing} (M.\ Müller) &
+Référence \og{}classique\fg{} du domaine : représentations, Fourier, STFT, etc. Chapitres 1--2 (représentation, Fourier) \lM{} pour le détail. &
+\url{https://www.audiolabs-erlangen.de/FMP} \lV\\
+\addlinespace
+\textbf{Spectral Audio Signal Processing} (J.O.\ Smith) &
+Référence de fond sur DFT/STFT/fenêtrage, à consulter à la demande. \vtwo{} À consulter aussi pour N25 (convolution, réponse en fréquence) ; chapitre exact \lM. &
+\url{https://ccrma.stanford.edu/~jos/sasp/} \lV\\
+\addlinespace
+\textbf{V.\ Velardo -- The Sound of AI} &
+Vidéos très pédagogiques : \og{}Audio Signal Processing for ML\fg{} (échantillonnage, Fourier, STFT, mel) et \og{}PyTorch for Audio\fg{}. Épisodes à repérer par titre. &
+\url{https://www.youtube.com/watch?v=iCwMQJnKk2c&list=PL-wATfeyAMNqIee7cH3q1bh4QJFAaeNv0} \lR\par \url{https://www.youtube.com/watch?v=gp2wZqDoJ1Y&list=PL-wATfeyAMNoirN4idjev6aRu8ISZYVWm} \lR\\
+\addlinespace
+\textbf{K.\ Choi et al.\ -- DL pour la MIR (tutoriel)} &
+Lecture de référence sur les représentations d'entrée et les CNN pour la musique. &
+\url{https://arxiv.org/abs/1709.04396} \lV\par Code : \url{https://github.com/keunwoochoi/dl4mir} \lV\\
+\addlinespace
+\textbf{Stanford CS236 -- notes} &
+VAE, GAN, modèles de diffusion (rappels pour C). &
+\url{https://deepgenerativemodels.github.io} \lV\par Notes : \url{https://deepgenerativemodels.github.io/notes/index.html} \lV\\
+\addlinespace
+\textbf{L.\ Weng -- blog} &
+VAE et diffusion, très lisibles. &
+\url{https://lilianweng.github.io/posts/2018-08-12-vae/} \lV\par \url{https://lilianweng.github.io/posts/2021-07-11-diffusion-models} \lV\\
+\addlinespace
+\textbf{AssemblyAI -- RVQ} &
+Explication courte de la quantification vectorielle résiduelle. &
+\url{https://assemblyai.com/blog/what-is-residual-vector-quantization} \lV\\
+\end{longtable}}
+
+\subsection{Deux parcours}
+\begin{itemize}
+\item \textbf{Parcours minimal $\approx$ 25--28\,h} : uniquement les éléments marqués \textbf{\sS} ci-dessous.
+\item \textbf{Parcours approfondi $\approx$ 40--45\,h} : avec les éléments \textbf{\sO}.
+\end{itemize}
+
+Ces durées sont \textbf{mes estimations}, non mesurées. À ajuster dès la semaine~1. L'apprentissage s'entrelace avec les semaines du projet : on n'apprend pas tout avant de commencer, on apprend ce qui est utile pour la semaine suivante.
+
+\begin{corr}{Clarification des durées\vtwot}
+La version~1 ne précisait pas à quel parcours se rapportaient les durées par phase ; leur somme (Phase~0 : 10--12\,h, puis 8--10\,h, 8--10\,h, 8--10\,h et 6--8\,h) donne $\approx$ 40--50\,h, ce qui correspond au parcours \emph{approfondi}, pas au minimal. Les notions ajoutées en version~2 pèsent (estimation) $\approx$ 2\,h en semaine~1 (N25, N27), $\approx$ 1,5\,h en semaine~3 (N26) et $\approx$ 1\,h pour la première lecture de FakeMusicCaps, déplacée en semaine~1. Total approfondi $\approx$ 44--54\,h ; parcours minimal $\approx$ 30--33\,h. Tout reste à re-mesurer en semaine~1.
+\end{corr}
+
+\subsection{Planning}
+
+\subsubsection{Phase 0 -- Socle signal ($\approx$ 10--12\,h, avant la semaine 1 du projet)}
+Objectif : savoir expliquer un spectrogramme et ce qui se passe quand on rééchantillonne.
+\begin{itemize}
+\item \textbf{\sS} \textbf{Velardo} : épisodes sur l'échantillonnage/Nyquist, la transformée de Fourier, la STFT, le spectrogramme et le mel ($\approx$ 3\,h). \lR
+\item \textbf{\sS} \textbf{MVA index §2} (traitement du signal) ($\approx$ 2\,h). \lV
+\item \textbf{\sS} \textbf{HF Audio Course}, unité sur les données audio ($\approx$ 2\,h). \lV{} pour le cours, \lM{} pour le titre de l'unité.
+\item \textbf{\sS} \textbf{Labs L1 et L3} ($\approx$ 3\,h) -- voir §\ref{sec:labs}.
+\item \textbf{\sO} FMP, chapitre sur Fourier ($\approx$ 2--3\,h) ; JOS à la demande.
+\item Notions : N1, N2, N3 (début), N4 (début).
+\item Checkpoint : voir §\ref{sec:checks}, bloc P0.
+\end{itemize}
+
+\subsubsection{Semaine 1 (projet : banc d'essai, M1, prédictions) -- apprentissage $\approx$ 8--10\,h}
+Objectif : comprendre \textbf{d'où viennent les pics spectraux} et reproduire un fakeprint.
+\begin{itemize}
+\item \textbf{\sS} \textbf{Papier} : Fourier explanation (\url{https://arxiv.org/abs/2506.19108} \lV) -- lire 2 fois ; première lecture : résumé, figures, conclusion ; seconde : méthode.
+\item \textbf{\sS} \textbf{Papier} : Pons et al., \emph{Upsampling artifacts in neural audio synthesis} (\url{https://arxiv.org/abs/2010.14356} \lR) ; code : \url{https://github.com/DolbyLaboratories/neural-upsampling-artifacts-audio} \lR.
+\item \textbf{\sS} \textbf{Article Distill} (Odena et al.) : \url{https://distill.pub/2016/deconv-checkerboard/} \lR{} (lecture rapide, 30\,min).
+\item \textbf{\sS} \textbf{MVA index §3} (CQT, hauteur/harmonie) ($\approx$ 1,5\,h) \lV.
+\item \textbf{\sS} \textbf{Papier} : Müller et al.\ 2022, \emph{Does Audio Deepfake Detection Generalize?} (\url{https://arxiv.org/abs/2203.16263} \lR) -- pour le \textbf{cqtspec/logspec contre melspec} (selon son résumé : environ 37\,\% d'EER en moins en moyenne, toutes choses égales) et le jeu \og{}in the wild\fg{}.
+\item \textbf{\sS} \textbf{N5 (MP3)} : un article de vulgarisation + \textbf{Lab L2} (§\ref{sec:outils} pour les sources).
+\item \textbf{\sS} \textbf{Labs L2 et L4}.
+\item \textbf{\sO} Papier : Afchar et al.\ 2024 (\url{https://arxiv.org/abs/2405.04181} \lV) -- première lecture seulement.
+\item \vtwo{} \textbf{\sS} \textbf{N25} : convolution, théorème de convolution, suréchantillonnage par insertion de zéros (JOS, FMP ; $\approx$ 1,5--2\,h), \emph{avant} N12.
+\item \vtwo{} \textbf{\sS} \textbf{N27 + Lab L9} : ffmpeg, filtres de rééchantillonnage, normalisation de volume, retard MP3 ($\approx$ 1\,h plus le lab).
+\item \vtwo{} \textbf{\sS} \textbf{FakeMusicCaps}, première lecture (format, génération, expériences ; $\approx$ 1\,h) : le format conditionne toute la chaîne de données. Lecture complète en semaine~3.
+\item \vtwo{} \textbf{\sO} Afchar et al.\ ICASSP 2025 (\url{https://arxiv.org/pdf/2501.10111} \lR).
+\item Notions : N3, N4, N5, N12, N17 (+ N25, N27).
+\item Livrable d'apprentissage : une page \og{}Pourquoi une convolution transposée laisse des pics\fg{} avec la figure de L4.
+\end{itemize}
+
+\subsubsection{Semaine 2 (projet : ré-encodage par codecs) -- apprentissage $\approx$ 8--10\,h}
+Objectif : savoir ce qu'est un codec neuronal et ce qui le distingue d'un générateur.
+\begin{itemize}
+\item \textbf{\sS} \textbf{Auto-encodeur/VAE/GAN} : CS236 notes (sections VAE et GAN) \lV{} + Weng VAE \lV{} ($\approx$ 3\,h ; sauter si acquis).
+\item \textbf{\sS} \textbf{RVQ} : blog AssemblyAI \lV{} (30\,min), puis \textbf{SoundStream} (\url{https://arxiv.org/abs/2107.03312} \lV) : lecture partielle (architecture, RVQ, pertes).
+\item \textbf{\sS} \textbf{EnCodec} (\url{https://arxiv.org/abs/2210.13438} \lV) : lecture complète ; dépôt \url{https://github.com/facebookresearch/encodec} \lV{} (cité dans tes listes).
+\item \textbf{\sS} \textbf{DAC} (\url{https://arxiv.org/abs/2306.06546} \lV) : résumé, méthode, ablations ; dépôt \url{https://github.com/descriptinc/descript-audio-codec} \lV.
+\item \textbf{\sS} \textbf{Lab L5} (ré-encoder un extrait avec EnCodec, comparer les spectres moyens).
+\item \textbf{\sO} \textbf{Mimi} : décrit dans l'article Moshi (Kyutai) -- \url{https://arxiv.org/pdf/2410.00037v1} \lV{} (identité de l'article à confirmer à l'ouverture) ; surveys codecs : \url{https://arxiv.org/abs/2402.13071}, \url{https://arxiv.org/abs/2402.13236}, \url{https://arxiv.org/abs/2406.00146} \lV{} (titres non relus). \vtwo{} Mimi est au niveau~3 du projet.
+\item \textbf{\sO} \textbf{MusicGen} (\url{https://arxiv.org/abs/2306.05284} \lR) : sections sur la tokenisation et l'entrelacement. \vtwo{} Au minimum, lire la partie tokenisation pour confirmer \emph{quel} EnCodec est utilisé (32\,kHz ?), car cela décide du checkpoint de la condition oracle.
+\item Notions : N10, N11, N13, N14, N15.
+\item Livrable d'apprentissage : tableau \og{}codec $\times$ débit $\times$ nombre de codebooks $\times$ fréquence d'échantillonnage\fg{} rempli à partir des papiers. \vtwo{} Ajouter deux colonnes : bande passante effective et checkpoint utilisé.
+\end{itemize}
+
+\subsubsection{Semaine 3 (projet : M1/M2, matrice 5$\times$5, contrôles de raccourci) -- apprentissage $\approx$ 8--10\,h}
+Objectif : savoir \textbf{détecter un raccourci} et \textbf{mesurer sans se mentir}.
+\begin{itemize}
+\item \textbf{\sS} \textbf{MVA index §7--8} (DL pour l'audio, exemples) ($\approx$ 2\,h) \lV.
+\item \textbf{\sS} \textbf{Choi et al.} tutoriel (sections sur les représentations d'entrée et les CNN) \lV.
+\item \textbf{\sS} \textbf{Geirhos et al., \emph{Shortcut Learning in Deep Neural Networks}} (\url{https://arxiv.org/abs/2004.07780} \lV) : sections d'introduction et d'exemples ; retenir la grille de lecture \og{}stratégie décisionnelle $\neq$ intention\fg{}.
+\item \textbf{\sS} \textbf{Müller et al., silence} (\url{https://arxiv.org/abs/2106.12914} \lR) : d'après son résumé, un modèle qui ne voit que la durée du silence initial atteint environ 85\,\% de précision (EER 15,1\,\%), et tailler le silence dégrade des modèles établis (EER de $\sim$3,6\,\% à $\sim$15,5\,\% pour RawNet2). \textbf{C'est le précédent exact de H3/M0.}
+\item \textbf{\sS} \textbf{Afchar et al.\ 2024} (\url{https://arxiv.org/abs/2405.04181} \lV) : lecture complète ; sujets à extraire : calibration, interprétabilité, robustesse. \vtwo{} Titre confirmé : \og{}Detecting music deepfakes is easy but actually hard\fg{}.
+\item \textbf{\sS} \textbf{FakeMusicCaps} (\url{https://arxiv.org/abs/2409.10684} \lV). \vtwo{} Lecture complète (première lecture en semaine~1).
+\item \textbf{\sS} \textbf{Guo et al., calibration} (\url{https://arxiv.org/abs/1706.04599} \lR) : définition de l'ECE, temperature scaling.
+\item \textbf{\sS} \textbf{Labs L6 et L7}.
+\item \textbf{\sO} \textbf{Papiers des 5 générateurs} -- lecture ciblée \og{}décodeur / vocodeur\fg{} (§\ref{sec:generateurs}). \vtwo{} \textbf{Promue au rang \sS} : le livrable de la semaine est le tableau de la section~\ref{sec:generateurs}, et les familles de décodeurs doivent être déclarées \emph{avant} les résultats.
+\item \vtwo{} \textbf{\sS} \textbf{N26} : bootstrap par groupe, différence d'AUC appariée, Holm ($\approx$ 1,5\,h).
+\item \vtwo{} \textbf{\sO} MusicDET (\url{https://arxiv.org/pdf/2605.18072} \lR), \og{}Probing Token Spaces\fg{} (\url{https://www.emergentmind.com/papers/2606.08663} \lR), ArtifactNet (\url{https://arxiv.org/pdf/2604.16254.pdf} \lR).
+\item Notions : N6, N7, N8, N9, N16, N18, N19, N20 (+ N26).
+\item Livrable d'apprentissage : tableau §\ref{sec:generateurs} rempli.
+\end{itemize}
+
+\subsubsection{Semaine 4 (projet : robustesse, M3, erreurs, test d'écoute) -- apprentissage $\approx$ 6--8\,h}
+Objectif : comprendre \textbf{pourquoi la log-fréquence rend l'échelle invariante}, et conclure proprement.
+\begin{itemize}
+\item \textbf{\sS} \textbf{Papier de robustesse} (\url{https://arxiv.org/abs/2607.27454} \lV) : lecture complète ; dépôt \url{https://github.com/thomas0barand/robust-deepfake-detector} \lV. \vtwo{} Si M3 est abandonné (niveau~2), une lecture ciblée suffit.
+\item \textbf{\sS} \textbf{Lab L3 (relu)} + dérivation sur papier : si $f' = a\cdot f$ (changement de vitesse), alors $\log f' = \log f + \log a$ (translation) $\rightarrow$ une corrélation croisée suivie d'un max-pooling est invariante à la translation.
+\item \textbf{\sS} \textbf{SONICS} (\url{https://arxiv.org/abs/2408.14080} \lV) : lecture ciblée (architecture SpecTTTra, cadre d'évaluation).
+\item \textbf{\sS} \textbf{Lab L8} (protocole de test d'écoute).
+\item \textbf{\sO} \textbf{AST} (\url{https://arxiv.org/abs/2104.01778} \lV) ; \textbf{AI-OpenBMAT} (\url{https://arxiv.org/abs/2602.06823} \lV) pour l'extension ; \textbf{Musika} (\url{https://arxiv.org/abs/2208.08706} \lR) comme exemple de codec/GAN cité par le dépôt Deezer.
+\item Notions : N21, N22, N23, N24 (N28 en option).
+\item Livrable d'apprentissage : une page \og{}Ce que j'aurais prédit / ce qui est arrivé\fg{}.
+\end{itemize}
+\section{Papiers : ordre de lecture}\label{sec:papiers}
+
+Légende : \textbf{P1} = à lire intégralement ; \textbf{P2} = lecture ciblée ; \textbf{P3} = culture / extension. \og{}Quoi chercher\fg{} = les questions à garder en tête pendant la lecture. Pour quelqu'un qui n'a pas eu de cours : \textbf{lire dans cet ordre}, une première passe courte (résumé, figures, conclusion) avant la lecture complète.
+
+{\footnotesize
+\begin{longtable}{L{0.6cm}L{0.9cm}L{3.9cm}L{4.5cm}L{5.0cm}}
+\toprule
+\textbf{\#} & \textbf{Prio.} & \textbf{Papier} & \textbf{Lien} & \textbf{Quoi chercher}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{\#} & \textbf{Prio.} & \textbf{Papier} & \textbf{Lien} & \textbf{Quoi chercher}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+1 & P1 & \emph{A Fourier Explanation of AI-music Artifacts} (ISMIR 2025) & \url{https://arxiv.org/abs/2506.19108} \lV & Quelle est la \textbf{cause} des pics ? Quel est le \textbf{critère de détection} ? Que montrent les tests sur Suno/Udio ? Quelles limites l'article avoue-t-il ?\\
+\addlinespace
+2 & P1 & Müller et al.\ -- \emph{Does Audio Deepfake Detection Generalize?} & \url{https://arxiv.org/abs/2203.16263} \lR & Quelle représentation gagne (cqt/log contre mel) ? Écart entre jeu de benchmark et jeu \og{}in the wild\fg{} ?\\
+\addlinespace
+3 & P1 & Afchar et al.\ (Deezer), 2024 & \url{https://arxiv.org/abs/2405.04181} \lV & Comment mesurent-ils calibration et robustesse ? Que révèle l'interprétabilité ? \vtwo{} Titre confirmé : \emph{Detecting music deepfakes is easy but actually hard}. Quels générateurs et quels auto-encodeurs, et quels résultats inter-familles ?\\
+\addlinespace
+4 & P1 & FakeMusicCaps & \url{https://arxiv.org/abs/2409.10684} \lV & Comment les 5 modèles sont-ils échantillonnés ? Quel format audio ? Quels détecteurs de base ? \vtwo{} Déjà établi (\lO) : mono, 16\,kHz, WAV flottant 32 bits ; détecteurs M5, RawNet2, ResNet18. À chercher : clips réels dans l'archive ? décodeurs et fréquences natives des générateurs ? règle de découpage ?\\
+\addlinespace
+5 & P1 & EnCodec & \url{https://arxiv.org/abs/2210.13438} \lV & Architecture encodeur/décodeur, RVQ, pertes (reconstruction + adversariale), débits.\\
+\addlinespace
+6 & P1 & \emph{Improved Robustness in AI-Generated Music Detection} (juillet 2026) & \url{https://arxiv.org/abs/2607.27454} \lV\par \url{https://arxiv.org/pdf/2607.27454} \lO & Pourquoi les détecteurs actuels échouent sous vitesse ? Comment la log-fréquence + corrélation + max-pool règle-t-elle le problème ? Résiste-t-elle au MP3 ? \vtwo{} Réponse partielle : le papier ne teste pas le MP3 (section~6.3). À relire : la perte hybride (détection + localisation des pics), les facteurs de vitesse alignés sur les bins à l'entraînement et continus au test.\\
+\addlinespace
+7 & P1 & Geirhos et al.\ -- \emph{Shortcut Learning in DNNs} & \url{https://arxiv.org/abs/2004.07780} \lV & Comment distinguer une stratégie de décision intentionnelle d'un raccourci ?\\
+\addlinespace
+8 & P2 & Pons et al.\ -- \emph{Upsampling artifacts in neural audio synthesis} & \url{https://arxiv.org/abs/2010.14356} \lR & Sources d'artefacts (opérateurs, réplicas) ; quel suréchantillonneur est sain ?\\
+\addlinespace
+9 & P2 & Odena et al.\ -- \emph{Deconvolution and Checkerboard Artifacts} & \url{https://distill.pub/2016/deconv-checkerboard/} \lR & Pourquoi un recouvrement inégal laisse un motif ; resize-convolution.\\
+\addlinespace
+10 & P2 & SoundStream & \url{https://arxiv.org/abs/2107.03312} \lV & RVQ et dropout de quantificateurs ; pertes adversariales.\\
+\addlinespace
+11 & P2 & DAC (\emph{High-Fidelity Audio Compression with Improved RVQGAN}) & \url{https://arxiv.org/abs/2306.06546} \lV & Différences avec EnCodec (activation, pertes, codebooks) ; débits testés.\\
+\addlinespace
+12 & P2 & Müller et al.\ -- silence & \url{https://arxiv.org/abs/2106.12914} \lR & Comment construisent-ils le contrôle négatif ? Que change l'ablation \og{}sans silence\fg{} ?\\
+\addlinespace
+13 & P2 & SONICS & \url{https://arxiv.org/abs/2408.14080} \lV & Architecture SpecTTTra ; protocole ; ce que l'article annonce de la généralisation.\\
+\addlinespace
+14 & P2 & Choi et al.\ -- tutoriel DL pour la MIR & \url{https://arxiv.org/abs/1709.04396} \lV & Représentations d'entrée ; CNN ; pièges d'évaluation.\\
+\addlinespace
+15 & P2 & Guo et al.\ -- \emph{On Calibration of Modern Neural Networks} & \url{https://arxiv.org/abs/1706.04599} \lR & ECE, diagramme de fiabilité, temperature scaling.\\
+\addlinespace
+16 & P2 & MusicGen & \url{https://arxiv.org/abs/2306.05284} \lR & Tokenizer EnCodec ; entrelacement ; fréquence d'échantillonnage. \vtwo{} Quel checkpoint EnCodec exactement ?\\
+\addlinespace
+17 & P2 & Stable Audio Open & \url{https://arxiv.org/abs/2407.14358} \lR & Auto-encodeur (VAE, 156\,M paramètres d'après l'article), DiT, 44,1\,kHz stéréo.\\
+\addlinespace
+18 & P2 & AudioLDM 2 & \url{https://arxiv.org/abs/2308.05734} \lR & \og{}Language of audio\fg{} (AudioMAE + GPT-2) puis diffusion latente ; quel vocodeur ?\\
+\addlinespace
+19 & P2 & MusicLDM & \url{https://arxiv.org/abs/2308.01546} \lR & Adapte Stable Diffusion/AudioLDM, ré-entraîne CLAP et \textbf{HiFi-GAN} sur la musique.\\
+\addlinespace
+20 & P2 & Mustango & \url{https://arxiv.org/abs/2311.08355} \lR & Étend Tango ; MuNet ; quel vocodeur ?\\
+\addlinespace
+21 & P3 & AST (\emph{Audio Spectrogram Transformer}) & \url{https://arxiv.org/abs/2104.01778} \lV & Comment tokeniser un spectrogramme en patches.\\
+\addlinespace
+22 & P3 & Musika & \url{https://arxiv.org/abs/2208.08706} \lR & Auto-encodeur adversarial + GAN ; cité par le dépôt Deezer comme codec.\\
+\addlinespace
+23 & P3 & AI-OpenBMAT & \url{https://arxiv.org/abs/2602.06823} \lV & Conditions réalistes (musique en arrière-plan) ; accès au jeu.\\
+\addlinespace
+24 & P3 & Mimi (article Moshi) ; surveys codecs & \url{https://arxiv.org/pdf/2410.00037v1} \lV ; \url{https://arxiv.org/abs/2402.13071} ; \url{https://arxiv.org/abs/2402.13236} ; \url{https://arxiv.org/abs/2406.00146} & Vue d'ensemble des codecs ; débit/qualité.\\
+\addlinespace
+25 & P3 & Article listé dans les ressources du projet & \url{https://arxiv.org/abs/2603.09936} \lM{} pour le titre & Titre et pertinence \textbf{non relus} : ouvrir avant d'en dépendre. \vtwo{} À trancher en semaine~1 : l'ouvrir et le classer, sinon le retirer de la liste.\\
+\addlinespace
+26\vtwo & P2 & Afchar et al.\ -- \emph{AI-Generated Music Detection and its Challenges} (ICASSP 2025, version courte) & \url{https://arxiv.org/pdf/2501.10111} \lR & Réglages d'entraînement (durée des extraits, augmentations) ; comment testent-ils un générateur absent de FMA (MusicGen) ?\\
+\addlinespace
+27\vtwo & P2 & MusicDET -- \emph{Zero-Shot AI-Generated Music Detection} (ICML 2026) & \url{https://arxiv.org/pdf/2605.18072} \lR\par \url{https://icml.cc/virtual/2026/poster/65106} \lR\par Code : \url{https://github.com/Chaolei98/MusicDET} \lR & Que signifie \og{}appris sans aucun faux\fg{} ? Quel résultat sur les sous-ensembles de FakeMusicCaps ? Quelle robustesse aux manipulations ?\\
+\addlinespace
+28\vtwo & P3 & \emph{Probing Token Spaces under Generator Shift in AI-Generated Music Detection} (arXiv 2606.08663) & \url{https://www.emergentmind.com/papers/2606.08663} \lR & Quels codecs (EnCodec, DAC, X-Codec mini) ? Quel effet de l'indice de codebook (précoce ou tardif) sur la généralisation ?\\
+\addlinespace
+29\vtwo & P3 & ArtifactNet (arXiv 2604.16254) & \url{https://arxiv.org/pdf/2604.16254.pdf} \lR\par \url{https://arxiv.org/html/2604.16254} \lR & Comment extraire des résidus de codec ? Effet de l'entraînement conscient du codec (WAV/MP3/AAC/Opus) ?\\
+\addlinespace
+30\vtwo & P3 & \emph{Explainable Detection of Machine Generated Music and Early Systematic Evaluation} & \url{https://arxiv.org/pdf/2412.13421} \lR & Utilise FakeMusicCaps : comment sont comptés les clips humains et générés ? Résultats hors domaine.\\
+\addlinespace
+31\vtwo & P3 & FakeMusicCaps, version journal (\emph{J.\ Imaging}, 2025) & \url{https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12295441/} \lR & Compléments à l'arXiv (attribution, ensemble ouvert).\\
+\end{longtable}}
+
+\textbf{Conseil de lecture} pour un public sans cours : pour chaque papier, remplir 5 lignes -- \emph{problème, idée, méthode en 3 phrases, résultat clé, limite avouée} -- avant de passer au suivant.
+
+\section{Fiche à remplir : les 5 générateurs de FakeMusicCaps}\label{sec:generateurs}
+
+Objectif : documenter le \textbf{décodeur} de chacun (pour H1). Ce qui est connu est marqué ; le reste est \textbf{à vérifier dans le papier} (ne pas le supposer).
+
+{\footnotesize
+\begin{longtable}{L{1.8cm}L{3.7cm}L{4.5cm}L{3.2cm}L{2.1cm}}
+\toprule
+\textbf{Générateur} & \textbf{Famille (ce qui est connu)} & \textbf{Décodeur / vocodeur (à vérifier)} & \textbf{Lien avec EnCodec/DAC ; décodeur oracle\vtwo} & \textbf{Prédiction à écrire}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Générateur} & \textbf{Famille (ce qui est connu)} & \textbf{Décodeur / vocodeur (à vérifier)} & \textbf{Lien avec EnCodec/DAC ; oracle} & \textbf{Prédiction}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\textbf{MusicGen} & LM Transformer sur jetons \textbf{EnCodec} (RVQ), 32\,kHz \lR & Décodeur d'EnCodec (type de suréchantillonnage ?). \vtwo{} Le papier FakeMusicCaps indique qu'il décode des jetons discrets d'EnCodec (\lO) ; il ne donne pas sa fréquence native. & \textbf{Fort}. Oracle : EnCodec 32\,kHz (\lM, à confirmer). & Détecteur \og{}EnCodec\fg{} $\rightarrow$ meilleure AUC\\
+\addlinespace
+\textbf{Stable Audio Open} & Diffusion latente (DiT 1\,057\,M) sur un VAE 156\,M (latent 64), 44,1\,kHz stéréo, T5 \lR & Décodeur de son propre VAE (convolutions strided/Snake côté encodeur ; décodeur à confirmer). \vtwo{} 44,1\,kHz stéréo confirmé (\lO). & Moyen/faible. Oracle : VAE de Stable Audio Open (poids à confirmer \lM). & À écrire\\
+\addlinespace
+\textbf{AudioLDM 2} & AudioMAE \og{}language of audio\fg{} + GPT-2 + diffusion latente \lR & \textbf{Vocodeur ? VAE sur mel ?} \vtwo{} VAE + HiFi-GAN d'après l'extraction du papier FakeMusicCaps (\lO) ; fréquence native non indiquée. & À déterminer. Oracle : HiFi-GAN (mel $\rightarrow$ onde). & À écrire\\
+\addlinespace
+\textbf{MusicLDM} & Adapte Stable Diffusion/AudioLDM ; \textbf{ré-entraîne CLAP et HiFi-GAN} \lR & HiFi-GAN. \vtwo{} Confirmé par l'extraction (\lO) ; fréquence native non indiquée. & À déterminer. Oracle : HiFi-GAN de MusicLDM. & À écrire\\
+\addlinespace
+\textbf{Mustango} & Étend Tango (text-to-audio) ; MuNet \lR & Vocodeur ? \vtwo{} Génère à 16\,kHz (\lO) ; vocodeur non indiqué dans l'extrait. & À déterminer. & À écrire\\
+\end{longtable}}
+
+Utilisation : regrouper les générateurs en familles de décodeurs (par exemple \og{}codec-décodeur\fg{}, \og{}VAE-waveform\fg{}, \og{}VAE-mel + vocodeur\fg{}), puis calculer la corrélation de rang entre \textbf{similarité de famille} et \textbf{AUC croisée} (test de H1).
+
+\begin{corr}{Précisions pour H1\vtwot}
+\begin{itemize}
+\item \textbf{Familles à déclarer avant les résultats} (proposition à confirmer dans les papiers) : (1) codec-décodeur RVQ : MusicGen ; (2) VAE-waveform : Stable Audio Open ; (3) VAE-mel + vocodeur HiFi-GAN : AudioLDM~2, MusicLDM, et Mustango sous réserve de vérifier son vocodeur. Avec trois familles et cinq générateurs, la corrélation de rang n'a presque aucune puissance : la rapporter à titre descriptif et privilégier AUC intra-famille contre inter-famille, avec IC sur la différence, ainsi que la condition oracle.
+\item \textbf{Prédiction numérique.} La colonne \og{}Prédiction\fg{} doit contenir une fourchette d'AUC écrite et datée \emph{avant} de lancer la matrice.
+\item \textbf{Effet du format.} Tous les clips FakeMusicCaps sont à 16\,kHz mono : pour MusicGen (32\,kHz) et Stable Audio Open (44,1\,kHz), la bande au-dessus de 8\,kHz est perdue ; pour les modèles natifs à 16\,kHz, les artefacts éventuels sont à proximité de la limite de Nyquist de 8\,kHz (à vérifier). La comparaison entre générateurs doit en tenir compte.
+\end{itemize}
+\end{corr}
+\section{Mini-labs d'ancrage}\label{sec:labs}
+
+Chaque lab dure 0,5--2\,h, se fait sur CPU (sauf L5) et sert de matière au cours écrit dans la nouvelle session. Les durées sont des estimations.
+
+{\footnotesize
+\begin{longtable}{L{1.5cm}L{7.2cm}L{1.7cm}L{4.9cm}}
+\toprule
+\textbf{Lab} & \textbf{Contenu} & \textbf{Notion(s)} & \textbf{Ce qu'on doit voir}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Lab} & \textbf{Contenu} & \textbf{Notion(s)} & \textbf{Ce qu'on doit voir}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\textbf{L1} Aliasing & Synthétiser un sinus à fréquence proche de Nyquist ; rééchantillonner sans filtre puis avec filtre ; tracer la STFT. & N1 & Réplicas/repliement visibles sans filtre.\\
+\addlinespace
+\textbf{L2} MP3 aller-retour & Encoder un extrait FMA en MP3 à plusieurs débits (par exemple avec \texttt{ffmpeg}), décoder, comparer le spectre moyen. \vtwo{} Relever aussi le retard introduit par l'encodeur, et vérifier que la coupure se situe au-dessus de 8\,kHz (donc invisible après passage à 16\,kHz). & N5 & La \textbf{coupure passe-bas} et ses variations avec le débit ; mesurer, ne pas supposer.\\
+\addlinespace
+\textbf{L3} Vitesse et axe log & Prendre un son harmonique ; changer la vitesse ($\times0{,}9$, $\times1{,}1$) ; tracer le spectre sur axe linéaire puis logarithmique. & N3, N4, N21 & Sur l'axe linéaire, l'écart entre harmoniques change ; sur l'axe log, le spectre \textbf{se translate}.\\
+\addlinespace
+\textbf{L4} Pics de suréchantillonnage & Réseau jouet : conv1D transposée (stride 3, noyau 5) contre interpolation \og{}plus proche voisin\fg{} + conv ; poids aléatoires ; entrée bruit blanc ; moyenne de spectres. \vtwo{} Ajouter une version avec insertion de zéros seule, puis filtre, pour voir les images spectrales. & N12, N17 (+ N25) & Pics périodiques avec la conv transposée ; spectre plat (ou lisse) avec l'autre.\\
+\addlinespace
+\textbf{L5} Aller-retour codec & Passer un extrait dans EnCodec (puis DAC) ; comparer spectre moyen original contre reconstruit ; débits différents. \emph{(GPU ou CPU, Colab).} \vtwo{} Refaire la comparaison après rééchantillonnage à 16\,kHz (chaîne de la condition~A) pour voir ce qu'il reste dans 0--8\,kHz. & N14, N17 & Des pics/une coupure apparaissent selon le débit.\\
+\addlinespace
+\textbf{L6} M0 & Extraire métadonnées (format, sr, durée, volume, bande passante) ; entraîner un classifieur ; AUC avec IC bootstrap. \vtwo{} Faire \emph{deux versions} : M0-brut (avant normalisation ; AUC attendue proche de 1 entre FMA et FakeMusicCaps) puis M0-résiduel (après la chaîne : rolloff, RMS, silence, plancher de bruit, clipping, décalage continu), avec IC par groupe. & N19, N20 & AUC $>0{,}5$ \emph{avant} même de regarder l'audio : c'est le raccourci. \vtwo{} M0-brut proche de 1 = contrôle de cohérence ; ce qui reste pour M0-résiduel mesure l'effet réel.\\
+\addlinespace
+\textbf{L7} Métriques & Implémenter ROC, AUC, EER, TPR@1\,\%\,FPR en NumPy ; vérifier avec scikit-learn ; bootstrap ; comparer variance bootstrap et variance entre seeds. \vtwo{} Ajouter : bootstrap par groupe contre par segment (simulation avec plusieurs segments par piste), puis différence d'AUC appariée. & N8, N9 (+ N26) & Les trois mesures d'incertitude ne se valent pas. \vtwo{} Le bootstrap par segment donne des IC trop étroits.\\
+\addlinespace
+\textbf{L8} Test d'écoute & Écrire le protocole : 20 extraits, ordre aléatoire, réponse binaire + confiance ; script d'analyse ; calcul de taux de réussite et d'accord. & N22 & Protocole prêt avant de recruter.\\
+\addlinespace
+\textbf{L9}\vtwo{} Normalisation et stockage & Construire la chaîne de la condition~A (mono, 16\,kHz, segments de 10\,s, même rééchantillonneur, même volume). Appliquer l'aller-retour réel/faux sur 20 pistes avec un \emph{codec factice} (identité) : les deux chemins doivent donner le même signal. Chronométrer et mesurer la taille sur disque de 50 pistes ; extrapoler au budget de stockage. & N27, N19 & Réel et \og{}faux identité\fg{} indiscernables (différence numérique nulle ou négligeable) ; budget de stockage mesuré à comparer à §\ref{sec:budget}.\\
+\end{longtable}}
+
+\section{Outils, données, dépôts, licences}\label{sec:outils}
+
+{\footnotesize
+\begin{longtable}{L{2.6cm}L{3.0cm}L{9.7cm}}
+\toprule
+\textbf{Élément} & \textbf{Usage} & \textbf{Lien / remarque}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Élément} & \textbf{Usage} & \textbf{Lien / remarque}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+FMA & Réel & \url{https://github.com/mdeff/fma} \lV{} ; \texttt{fma\_small} (8\,000 $\times$ 30\,s MP3)\\
+\addlinespace
+FakeMusicCaps & Faux de test & \url{https://zenodo.org/record/13732524/latest} \lV{} ; 12,9\,Go. \vtwo{} Somme de contrôle md5 vue sur Zenodo : \texttt{db418dc95ab7dc378a55f29d6021fd66} (\lR). Version v2 en accès ouvert ; un autre enregistrement a été vu : \url{https://zenodo.org/records/15063698} \lR. À faire après téléchargement : compter les fichiers, vérifier le format, chercher les clips réels, relever la licence.\\
+\addlinespace
+EnCodec & Ré-encodage & \url{https://github.com/facebookresearch/encodec} \lV{} \vtwo{} Checkpoint 24\,kHz ; checkpoint 32\,kHz destiné à la musique à confirmer (\lM).\\
+\addlinespace
+DAC & Ré-encodage & \url{https://github.com/descriptinc/descript-audio-codec} \lV\\
+\addlinespace
+SONICS & M4 (inférence) & \url{https://github.com/awsaf49/sonics} \lV{} (MIT pour le code et les modèles)\\
+\addlinespace
+Dépôt ISMIR 2025 Deezer & Référence de M1 (à réimplémenter, pas à copier) & \url{https://github.com/deezer/ismir25-ai-music-detector} \lV{} (CC BY-NC 4.0 ; brevets mentionnés)\\
+\addlinespace
+Dépôt robustesse & Référence de M3 & \url{https://github.com/thomas0barand/robust-deepfake-detector} \lV{} (licence illisible)\\
+\addlinespace
+Dépôt deepfake-detector & Référence & \url{https://github.com/deezer/deepfake-detector} \lV{} (CC BY-NC 4.0)\\
+\addlinespace
+MusicDET (code)\vtwo & Comparaison conceptuelle & \url{https://github.com/Chaolei98/MusicDET} \lR{} (licence non relevée)\\
+\addlinespace
+Sources web sur le MP3 & N5 (vulgarisation) & \url{https://www.forasoft.com/learn/audio-for-video/articles-audio/how-audio-compression-works} \lR{} (article de blog, pas académique) ; \url{https://typeset.io/pdf/the-theory-behind-mp3-4a7suq9ncw.pdf} \lR{} (document de type mémoire, qualité non évaluée)\\
+\addlinespace
+Calcul & Colab T4 & T4 $\approx$ 1,19 unité/h (mesure de mars 2026, fluctuante) ; nombre d'unités Pro \textbf{non confirmé} ; fp16 sur T4\\
+\addlinespace
+Stockage\vtwo & Budget disque & Voir le tableau de la section~\ref{sec:budget} : ne pas stocker les ondes reconstruites ; calculer les caractéristiques à la volée.\\
+\end{longtable}}
+
+Colab : sauvegarder un checkpoint toutes les 15\,min sur Drive, scripts reprenables, ne pas compter sur un GPU garanti.
+\section{Glossaire (FR / EN)}\label{sec:gloss}
+
+{\small
+\begin{longtable}{L{4.2cm}L{11.1cm}}
+\toprule
+\textbf{Terme} & \textbf{Définition courte}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Terme} & \textbf{Définition courte}\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Fréquence d'échantillonnage (\emph{sample rate}) & Nombre d'échantillons par seconde. Fixe la fréquence maximale représentable (Nyquist $=f_s/2$).\\
+Repliement (\emph{aliasing}) & Fréquences au-dessus de Nyquist repliées dans la bande utile.\\
+STFT & Transformée de Fourier à court terme : spectre sur des fenêtres glissantes.\\
+Spectrogramme mel & Spectrogramme dont l'axe fréquence suit une échelle perceptive (mel).\\
+CQT & Transformée à Q constant : résolution logarithmique en fréquence (une octave = nombre fixe de bins).\\
+Rééchantillonnage (\emph{resampling}) & Changer la fréquence d'échantillonnage.\\
+Changement de vitesse & Lecture plus rapide/lente : hauteur \textbf{et} durée changent ensemble (mise à l'échelle de l'axe fréquence).\\
+MDCT & Transformée en cosinus discrète modifiée, base de la compression MP3.\\
+Masquage psychoacoustique & Un son fort cache des sons faibles voisins ; le codec les quantifie grossièrement.\\
+Codec neuronal & Encodeur-décodeur appris, avec bottleneck quantifié, pour compresser l'audio.\\
+RVQ & Quantification vectorielle résiduelle : plusieurs codebooks appliqués successivement à ce qui reste.\\
+Vocodeur & Réseau qui transforme une représentation (mel) en onde sonore.\\
+Conv transposée & Suréchantillonnage appris ; peut laisser des motifs périodiques.\\
+Fakeprint & Empreinte spectrale moyenne caractéristique d'un générateur.\\
+AUC / EER & Aire sous la courbe ROC / taux d'erreur où FPR = FNR.\\
+TPR@1\,\%\,FPR & Taux de détection quand on accepte 1\,\% de faux positifs.\\
+Calibration & Les probabilités prédites correspondent aux fréquences observées.\\
+Raccourci (\emph{shortcut}) & Signal corrélé à l'étiquette mais sans lien avec la tâche visée.\\
+Fuite (\emph{leakage}) & Information de test présente dans l'entraînement ou corrélée au split.\\
+Contrôle négatif & Expérience censée donner un résultat nul si l'instrument est sain.\\
+Hors distribution (OOD) & Données qui diffèrent de celles d'entraînement.\\
+\midrule
+\multicolumn{2}{l}{\textit{Termes ajoutés en version 2}\vtwo}\\
+\midrule
+Aller-retour de rééchantillonnage & Chemin identique (mêmes filtres) pour le réel et pour le faux ; seule la présence du codec distingue les deux classes.\\
+Décodeur oracle & Décodeur même d'un générateur testé, utilisé pour reconstruire de la musique réelle ; borne haute pour H1.\\
+Images spectrales & Copies du spectre créées par un suréchantillonnage par insertion de zéros ($Y(e^{j\omega})=X(e^{jL\omega})$) ; un filtre anti-image les atténue.\\
+M0-brut / M0-résiduel & Classifieur de métadonnées avant normalisation (contrôle de cohérence) / après normalisation (mesure des raccourcis restants).\\
+Bootstrap par groupe & Rééchantillonnage des groupes (artiste, légende, piste) et non des segments, pour des IC honnêtes.\\
+Test de DeLong & Test de comparaison d'AUC corrélées (mêmes données de test) ; référence \lM{} à retrouver.\\
+Conditions A, B, C & A : mono 16\,kHz, comparable à FakeMusicCaps ; B : pleine bande sur FMA seul ; C : même passage MP3 pour toutes les classes et tous les jeux.\\
+Bande utile de FakeMusicCaps & 0--8\,kHz (Nyquist de 16\,kHz) : les pics de haute fréquence n'y figurent pas.\\
+Pré-enregistrement & Fichier daté (par exemple un commit) contenant hypothèses, réfutations chiffrées et prédictions, figé avant les expériences.\\
+\end{longtable}}
+
+\section{Checkpoints d'auto-évaluation}\label{sec:checks}
+
+À faire sans notes ; si deux réponses coincent dans un bloc, relire avant de passer au suivant.
+
+\paragraph{P0 -- Signal}
+\begin{enumerate}
+\item Pourquoi un son échantillonné à 22,05\,kHz ne contient-il rien au-dessus de 11,025\,kHz ?
+\item Que représente un bin de STFT ? Comment le compromis temps-fréquence dépend-il de la fenêtre ?
+\item Pourquoi l'échelle mel et pourquoi des dB ?
+\item Quelle est la différence entre changer la vitesse et décaler la hauteur seule ?
+\end{enumerate}
+
+\paragraph{S1 -- Artefacts}
+\begin{enumerate}
+\item Pourquoi une convolution transposée de noyau non divisible par le stride laisse-t-elle un motif périodique ?
+\item Que dit l'article de Fourier sur l'origine des pics, et pourquoi dépendent-ils de l'architecture ?
+\item Quelle coupure de fréquence observes-tu sur un MP3 à 128\,kbit/s, mesurée dans L2 ?
+\item Qu'est-ce qu'un fakeprint et comment le calcule-t-on ?
+\item \vtwo{} Pourquoi un suréchantillonnage par insertion de zéros crée-t-il des images spectrales ?
+\end{enumerate}
+
+\paragraph{S2 -- Codecs}
+\begin{enumerate}
+\item Dessine encodeur $\rightarrow$ RVQ $\rightarrow$ décodeur ; que change le nombre de codebooks ?
+\item Qu'est-ce qui distingue un codec d'un générateur de musique ?
+\item Pourquoi un morceau passé dans EnCodec est-il \og{}faux\fg{} aux yeux d'un détecteur ?
+\item Quelle perte entraîne EnCodec en plus de la reconstruction ?
+\item \vtwo{} Pourquoi faut-il faire passer le réel par le même aller-retour de rééchantillonnage que le faux ?
+\end{enumerate}
+
+\paragraph{S3 -- Mesures et raccourcis}
+\begin{enumerate}
+\item Définis AUC, EER, TPR@1\,\%\,FPR ; calcule-les sur un exemple de 6 scores.
+\item Que fait M0 et que prouve un AUC $>0{,}5$ pour M0 ?
+\item Pourquoi découper par artiste ?
+\item Quelle différence entre IC bootstrap et variance entre seeds ?
+\item Cite un précédent de raccourci dans la détection de deepfakes audio.
+\item \vtwo{} Pourquoi une AUC de M0-brut proche de 1 ne prouve-t-elle rien, et que mesure M0-résiduel ?
+\item \vtwo{} Pourquoi bootstrapper par groupe plutôt que par segment ?
+\end{enumerate}
+
+\paragraph{S4 -- Robustesse}
+\begin{enumerate}
+\item Pourquoi une translation sur l'axe log correspond-elle à un changement de vitesse ?
+\item Pourquoi une corrélation croisée + max-pooling est-elle invariante à la translation ?
+\item Quelle nuance H4 porte-t-elle sur MP3 et bruit ?
+\item Comment sélectionnes-tu les 20 extraits mal classés sans biais ?
+\item \vtwo{} Pourquoi la bande 0--8\,kHz de FakeMusicCaps limite-t-elle M1 et M3, et quel contrôle positif faut-il faire ?
+\end{enumerate}
+
+\section{Limites et liens non vérifiés}\label{sec:limites}
+
+\paragraph{Éléments de la version 1, avec leur état en version 2.}
+\begin{itemize}
+\item \textbf{Slides AI for Sound (Peeters)} : introuvables en ligne ; non utilisés.
+\item \textbf{Liens \lR} : vus dans des résultats de recherche (titres/auteurs cohérents), pages non ouvertes.
+\item \textbf{Détails de cours} (numéros d'épisodes Velardo, titres des unités HF Audio, chapitres FMP) : \lM, à confirmer en ouvrant les pages.
+\item \textbf{CS224S} : le syllabus n'a pas de liens de slides ni de lectures ; seul le lien de la première séance est confirmé.
+\item \textbf{Papiers 2025--2026} (Fourier, robustesse, AI-OpenBMAT, etc.) : connus par leur résumé ou la page du dépôt ; relire avant de citer des chiffres. \vtwo{} Le papier de robustesse et le papier FakeMusicCaps ont été ouverts par extraction (\lO) : plus de détails, mais toujours à relire.
+\item \textbf{AI-OpenBMAT} : accès et licence inconnus.
+\item \textbf{Dépôt de robustesse} : licence non lisible.
+\item \textbf{Titre exact d'Afchar et al.\ 2024} : \textbf{résolu en version 2}. \textbf{Papier 2603.09936} : toujours à confirmer à l'ouverture.
+\item \textbf{Budget GPU et durées d'étude} : estimations, pas des mesures.
+\item \textbf{Colab} : nombre d'unités Pro non confirmé (100 ou 500 selon les sources).
+\end{itemize}
+
+\begin{corr}{Nouveaux points ouverts\vtwot}
+\begin{itemize}
+\item \textbf{Contenu de l'archive FakeMusicCaps} : les clips réels de MusicCaps y figurent-ils ? Les papiers tiers donnent 5\,521 ou 5\,373 clips humains selon les sources.
+\item \textbf{Fréquences natives} de MusicGen, MusicLDM et AudioLDM2 : non indiquées dans le papier FakeMusicCaps ; \textbf{vocodeur de Mustango} : non indiqué dans l'extrait lu.
+\item \textbf{Checkpoint EnCodec de MusicGen} (32\,kHz pour la musique ?) : souvenir à confirmer (\lM).
+\item \textbf{Mimi pour la musique} : codec orienté parole d'après ce que l'on en sait ; à vérifier avant tout usage (\lM).
+\item \textbf{Licences} de l'archive FakeMusicCaps et du code MusicDET : non relevées.
+\item \textbf{Chiffres du papier de robustesse} : obtenus par extraction (\lO) ; à relire avant citation.
+\item \textbf{Rubrique \og{}Reproducibility instructions\fg{}} du dépôt deepfake-detector : à relire, car elle semble contredire la mention \og{}aucune instruction d'entraînement\fg{}.
+\item \textbf{Pages \texttt{/abs/}} de 2409.10684 et 2607.27454 : refusées depuis l'environnement de révision ; versions PDF ouvertes.
+\item \textbf{Liens ajoutés en version 2} (MusicDET, token spaces, ArtifactNet, version ICASSP, papier 2412.13421, version journal de FakeMusicCaps) : \lR, pages non ouvertes en entier. Pour \og{}Probing Token Spaces\fg{}, seul le lien d'un site tiers a été vu ; l'adresse arXiv n'est pas donnée, pour ne pas en inventer.
+\item \textbf{Seuils par défaut} proposés au §\ref{sec:hyp} (IC à 95\,\%, AUC $>0{,}6$, nombre de seeds) : propositions de cette version, non issues d'une source.
+\item \textbf{Budget de stockage} : calcul brut de la révision (PCM non compressé).
+\end{itemize}
+\end{corr}
+
+\section{Mode d'emploi pour la nouvelle session}\label{sec:mode}
+
+\subsection{Rôle de la session}
+La session sert à \textbf{produire des cours} (un par notion de la carte du §\ref{sec:notions}) et à \textbf{préparer les labs}, pas à refaire le projet. L'étudiant gardera ses cours comme base de révision et de rapport.
+
+\subsection{Règles}
+\begin{enumerate}
+\item Ce fichier est la \textbf{source de vérité}. En cas de doute, le relire.
+\item \textbf{Ne citer que les liens de ce fichier} avec leur étiquette. Ne jamais inventer d'URL, de numéro de page ou de chiffre.
+\item Tout ce qui est \lR{} ou \lM{} est signalé comme tel dans le cours.
+\item \textbf{Paraphraser} les papiers ; pas de longues citations.
+\item Chaque cours finit par \textbf{5 questions d'auto-évaluation} avec corrigé.
+\item Dire clairement ce qui est établi (papier) et ce qui est \textbf{hypothèse du projet}.
+\item \vtwo{} Signaler les éléments \lO{} comme lus par extraction : leurs chiffres sont à relire dans le papier avant d'être repris.
+\end{enumerate}
+
+\subsection{Format d'un cours par notion}\label{sec:format}
+\begin{enumerate}
+\item Intuition en 5 lignes.
+\item Formalisation (formules, définitions) -- niveau M2.
+\item Exemple numérique ou schéma.
+\item Code minimal (NumPy/PyTorch) quand le niveau le demande.
+\item Pièges fréquents.
+\item Lien avec le projet (hypothèse, ablation, détecteur concerné).
+\item Lectures (liens de ce fichier).
+\item Questions d'auto-évaluation + corrigé.
+\end{enumerate}
+
+\subsection{Prompt à coller pour démarrer}
+\begin{info}{Prompt}
+\itshape Tu es mon tuteur pour le projet décrit dans le fichier joint. Je suis en M2 IA, je n'ai aucun cours d'audio ni de génératif. Lis le fichier en entier. Puis écris le cours de la notion \textbf{N\_\_} en suivant le format du §\ref{sec:format}, en n'utilisant que les liens du fichier, avec leurs étiquettes. Signale ce qui est incertain. Termine par cinq questions avec corrigé, et propose-moi le lab associé.
+\end{info}
+
+\subsection{Ordre conseillé pour écrire les cours}
+\textbf{Semaine 1} : N1 $\rightarrow$ N2 $\rightarrow$ N25\vtwo{} $\rightarrow$ N3 $\rightarrow$ N4 $\rightarrow$ N27\vtwo{} $\rightarrow$ N5 $\rightarrow$ N12 $\rightarrow$ N17.\\
+\textbf{Semaine 2} : N10 $\rightarrow$ N11 $\rightarrow$ N13 $\rightarrow$ N14 $\rightarrow$ N15.\\
+\textbf{Semaine 3} : N8 $\rightarrow$ N9 $\rightarrow$ N26\vtwo{} $\rightarrow$ N19 $\rightarrow$ N20 $\rightarrow$ N6 $\rightarrow$ N18 $\rightarrow$ N16.\\
+\textbf{Semaine 4} : N21 $\rightarrow$ N22 $\rightarrow$ N23.\\
+\textbf{En dernier} : N7, N24, et N28\vtwo{} (optionnel).
+
+\end{document}

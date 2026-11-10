@@ -1,0 +1,22 @@
+# Données et sorties volumineuses : ne jamais committer (FMA, FakeMusicCaps, segments, modèles, résultats)
+data/
+results/
+*.wav
+*.mp3
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# LaTeX (artefacts de compilation de docs/)
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk

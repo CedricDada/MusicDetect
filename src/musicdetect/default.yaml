@@ -1,0 +1,119 @@
+# Configuration par défaut de musicdetect.
+# Toute clé peut être surchargée par un fichier --config (fusion récursive)
+# ou par --set section.cle=valeur sur la ligne de commande.
+
+paths:
+  fma_root: data/raw/fma            # contient fma_metadata/tracks.csv et fma_small/ (ou fma_medium/)
+  fmc_root: data/raw/FakeMusicCaps  # archive Zenodo FakeMusicCaps décompressée
+  work_dir: data/work               # index, segments WAV, caractéristiques, modèles
+  results_dir: results
+
+audio:                              # chaîne de normalisation commune (proposition, §chaîne)
+  anchor_sr: 16000                  # fréquence d'ancrage imposée par FakeMusicCaps
+  segment_s: 10.0                   # durée de FakeMusicCaps
+  segments_per_track: 2             # 2 segments de 10 s dans 30 s laissent 10 s de gigue de départ
+  roundtrip: true                   # aller-retour de rééchantillonnage (->f_c->ancrage) côté réel
+  normalise_level: true             # RMS cible par segment, identique réel / faux
+  level_dbfs: -23.0
+  peak_limit: 0.99                  # si le pic dépasse, on réduit le gain (drapeau `limited`)
+  silence_policy: none              # none | trim (même critère des deux côtés)
+  silence_db: -50.0
+  resample_backend: soxr            # soxr | scipy (scipy : repli pour les tests, jamais pour les résultats)
+  wav_dtype: int16                  # int16 | float32
+  max_track_s: 31.0                 # FMA = 30 s ; borne de sécurité à la lecture
+  max_delay_s: 0.05                 # recherche du retard codec dans [-max, +max]
+  seed: 0
+
+fma:
+  subset: small                     # small | medium | large
+  split_mode: artist                # artist (GroupShuffleSplit) | official (colonne set/split de FMA)
+  val_frac: 0.1
+  test_frac: 0.2
+  max_tracks: null                  # entier pour limiter (essais rapides)
+
+fmc:
+  # nom canonique -> noms de dossier acceptés (insensible à la casse) dans l'archive
+  generators:
+    real: [MusicCaps, real, original]
+    musicgen: [MusicGen_medium, musicgen, MusicGen]
+    musicldm: [MusicLDM, musicldm]
+    audioldm2: [audioldm2, AudioLDM2]
+    stable_audio_open: [stable_audio_open, StableAudioOpen]
+    mustango: [mustango, Mustango]
+
+codecs:                             # noms libres ; `kind` choisit l'implémentation
+  encodec_24k_6kbps:  {kind: encodec, hf_id: facebook/encodec_24khz, bandwidth: 6.0}
+  encodec_24k_12kbps: {kind: encodec, hf_id: facebook/encodec_24khz, bandwidth: 12.0}
+  encodec_24k_1p5kbps: {kind: encodec, hf_id: facebook/encodec_24khz, bandwidth: 1.5}
+  encodec_32k_musicgen: {kind: musicgen_encodec, hf_id: facebook/musicgen-small}   # oracle MusicGen (non testé)
+  dac_44k:            {kind: dac, hf_id: descript/dac_44khz, n_quantizers: null}
+  mimi_8cb:           {kind: mimi, hf_id: kyutai/mimi, num_quantizers: 8}
+  toy_comb_75hz:      {kind: toy_comb, native_sr: 24000, f0: 75.0, rel_db: -26.0}   # numpy seul : tests
+  identity_24k:       {kind: identity, native_sr: 24000}                              # contrôle négatif
+
+features:                           # fakeprint (M1, M3) : recette de Afchar et al. 2025
+  n_fft: 8192                       # 1,95 Hz par bin à 16 kHz ; pic EnCodec 24 kHz tous les 75 Hz = 38 bins
+  hop: 4096
+  band_hz: [1000, 8000]
+  floor_db: -50.0                   # plancher du spectre en dB (Barand : -50 à 16 kHz)
+  hull_area: 20                     # fenêtre de l'enveloppe inférieure (en bins)
+  average: db                       # db (moyenne des dB, Deezer) | power (dB de la puissance moyenne)
+  normalise: max                    # max (Deezer, M1) | l2 | none
+  max_db: 5.0
+
+m0:
+  variant: residual                 # residual (après chaîne) | raw (métadonnées de fichier)
+  classifier: hgb                   # logreg | hgb
+
+m1:
+  C: 1.0
+  class_weight: balanced
+  max_iter: 2000
+
+m2:                                 # CNN 1D sur spectrogramme (esprit de Deezer SimpleSpectrogramCNN)
+  n_fft: 1024
+  hop: 256
+  band_hz: [0, 8000]
+  hidden: [64, 64, 128, 128, 256, 256]
+  strides: [1, 3, 3, 3, 3, 3]
+  kernel: 3
+  head_dense: 64
+  dropout: 0.2
+  epochs: 20
+  batch_size: 32
+  lr: 1.0e-3
+  weight_decay: 1.0e-5
+  patience: 4
+  crop_s: 5.0                       # recadrage aléatoire à l'entraînement
+  seed: 0
+
+m3:                                 # corrélation croisée + max-pooling (Dugelay, Barand et al.)
+  bins_per_octave: 1920             # grille log fine (STFT interpolée), comme `bins_per_octave_stft` de Barand
+  lamb: 0.05                        # poids de la perte de position (le nom du checkpoint de Barand dit 0,1)
+  use_convolution: true
+  speed_range: [0.7, 1.4]
+  aug_per_segment: 2                # variantes accélérées par segment en plus de la version propre
+  lr: 1.0e-3
+  weight_decay: 1.0e-5
+  epochs: 40
+  batch_size: 64
+  patience: 5
+  seed: 0
+
+m4:                                 # SONICS SpecTTTra, inférence seule
+  hf_id: awsaf49/sonics-spectttra-gamma-5s
+  sample_rate: 16000
+  crop_s: 5.0
+  batch_size: 16
+
+eval:
+  bootstrap: 1000
+  fpr_target: 0.01
+  seed: 0
+  attacks:                          # grille de la proposition (§attaques)
+    speed: [0.9, 1.1]
+    speed_extended: [0.7, 0.8, 1.25, 1.4]
+    pitch_semitones: [-2, -1, 1, 2]
+    mp3_kbps: [64, 128, 192, 320]
+    resample_hz: [12000, 11025]
+    noise_snr_db: [30, 20, 10]

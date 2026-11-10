@@ -1,0 +1,240 @@
+\documentclass[11pt,a4paper]{article}
+
+% ------------------------------------------------------------------
+% Proposition de projet --- version courte (2 pages) avec figures
+% Compilation : pdflatex (2 passes) ou latexmk -pdf
+% ------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[french]{babel}
+\usepackage[a4paper,left=2.5cm,right=2.5cm,top=2.3cm,bottom=2.1cm]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{array,booktabs,tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,babel}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+
+\linespread{1.04}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\setlength{\topsep}{1pt}
+\setlength{\headheight}{14pt}
+\setlist[itemize]{leftmargin=1.4em,itemsep=2pt,topsep=2pt,parsep=0pt}
+\setlist[enumerate]{leftmargin=1.8em,itemsep=2pt,topsep=2pt,parsep=0pt}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.3pt}
+\fancyhead[L]{\small Proposition de projet --- détection de musique IA}
+\fancyhead[R]{\small 7 novembre 2026}
+\fancyfoot[C]{\small\thepage}
+
+\newcommand{\acompleter}[1]{\textcolor{red!70!black}{[À compléter : #1]}}
+\newcommand{\AUC}{\textrm{AUC}}
+
+% légendes de figures numérotées à la main (pas de flottants : mise en page maîtrisée)
+\newcounter{fig}
+\newcommand{\figcap}[2]{\par\vspace{1pt}\refstepcounter{fig}\label{#1}{\small\textbf{Figure~\thefig.} #2}\par\vspace{3pt}}
+
+\hypersetup{pdftitle={Proposition de projet (2 pages, figures) --- Ce que voit un détecteur de musique IA},
+  pdfauthor={À compléter}}
+
+\begin{document}
+
+% ------------------------------------------------------------------
+\begin{center}
+{\large\scshape Proposition de projet --- Master 2 Intelligence Artificielle}\\[0.5em]
+{\LARGE\bfseries Ce que voit un détecteur de musique IA}
+\end{center}
+
+\vspace{-0.2em}
+\begin{tabularx}{\textwidth}{@{}>{\bfseries}l X >{\bfseries}l X@{}}
+Étudiant(e) & \acompleter{nom} & Encadrant(e) & \acompleter{nom}\\
+Durée & 4 semaines & Date & 7 novembre 2026\\
+\end{tabularx}
+
+\vspace{0.3em}
+\textbf{Résumé.} Les détecteurs de musique générée par IA sont quasi parfaits sur les générateurs connus, mais on ignore comment ils réagissent à un générateur inconnu, à un changement de vitesse ou à un MP3, et quelle part de leur score vient de raccourcis de jeu de données. Ce projet de réplication-extension fabrique des \og faux\fg{} en ré-encodant de la musique réelle avec des codecs neuronaux (sans générateur), puis teste les détecteurs sur cinq générateurs ouverts et sous attaques.
+
+% ==================================================================
+\section{Question et principe}
+% ==================================================================
+
+\begin{quote}\small
+\emph{Un détecteur appris uniquement sur de la musique réelle contre sa version ré-encodée par des codecs neuronaux généralise-t-il à des générateurs jamais vus, ou apprend-il un raccourci de jeu de données ? Et que devient-il sous changement de vitesse ou compression MP3 ?}
+\end{quote}
+
+\begin{center}
+\begin{tikzpicture}[font=\footnotesize,
+  box/.style={draw,rounded corners=2pt,align=center,inner sep=2pt,line width=0.5pt,font=\scriptsize},
+  arr/.style={-{Stealth[length=5pt]},line width=0.6pt},
+  hd/.style={font=\footnotesize\bfseries,text=black!70}]
+% en-têtes de phases
+\node[hd] at (3.9,2.3) {1. Fabriquer les données};
+\node[hd] at (9.95,2.3) {2. Entraîner};
+\node[hd] at (13.6,2.3) {3. Tester};
+\draw[black!40] (0,2.0)--(8.0,2.0);
+\draw[black!40] (8.3,2.0)--(11.6,2.0);
+\draw[black!40] (11.9,2.0)--(15.3,2.0);
+% blocs
+\node[box,fill=blue!6,minimum width=1.9cm,minimum height=1.5cm] (fma) at (0.95,0) {\textbf{FMA}\\musique réelle\\MP3, 30\,s};
+\node[box,fill=green!12,minimum width=2.5cm,minimum height=1.3cm] (reel) at (3.65,0.95) {\textbf{Réel} (0)\\aller-retour de\\rééchantillonnage};
+\node[box,fill=orange!18,minimum width=2.5cm,minimum height=1.3cm] (faux) at (3.65,-0.95) {\textbf{Faux} (1)\\codec neuronal\\EnCodec, DAC};
+\node[box,fill=blue!6,minimum width=2.8cm,minimum height=3.3cm] (chaine) at (6.6,0) {\textbf{Chaîne commune}\\mono, 16\,kHz\\niveau, silences\\segments de 10\,s\\[3pt]même traitement\\réel et faux};
+\node[box,fill=blue!6,minimum width=3.3cm,minimum height=3.3cm] (det) at (9.95,0) {\textbf{Détecteurs}\\[2pt]M0 métadonnées\\M1 empreinte spectrale\\M2 petit CNN\\M3 log-fréquence};
+\node[box,fill=blue!6,minimum width=3.4cm,minimum height=1.4cm] (fmc) at (13.6,0.95) {\textbf{FakeMusicCaps}\\5 générateurs\\jamais vus};
+\node[box,fill=blue!6,minimum width=3.4cm,minimum height=1.4cm] (att) at (13.6,-0.95) {\textbf{Attaques}\\vitesse, hauteur\\MP3, rééchantillonnage};
+% flèches
+\draw[arr] (fma.east) to[out=0,in=180] (reel.west);
+\draw[arr] (fma.east) to[out=0,in=180] (faux.west);
+\draw[arr] (reel.east) -- (5.2,0.95);
+\draw[arr] (faux.east) -- (5.2,-0.95);
+\draw[arr] (chaine.east) -- (det.west);
+\draw[arr] (det.east) to[out=0,in=180] (fmc.west);
+\draw[arr] (det.east) to[out=0,in=180] (att.west);
+% rappel H3
+\node[font=\scriptsize,text=red!60!black,align=center] at (6.6,-2.1) {neutralise les raccourcis (H3)};
+\end{tikzpicture}
+\end{center}
+\vspace{-0.9em}
+\figcap{fig:pipeline}{Principe : les \og faux\fg{} viennent d'un codec, pas d'un générateur. La chaîne commune empêche de s'appuyer sur le format, la fréquence d'échantillonnage ou la durée. (0), (1) : étiquettes.}
+
+% ==================================================================
+\section{Positionnement}
+% ==================================================================
+
+\begin{itemize}
+  \item \textbf{Afchar et al.} (Deezer, \href{https://arxiv.org/abs/2405.04181}{arXiv 2405.04181}) distinguent le réel de sa reconstruction par auto-encodeur : scores très élevés sur les décodeurs vus, mauvaise généralisation entre familles.
+  \item \textbf{Robustesse} (ISMIR 2026, \href{https://arxiv.org/abs/2607.27454}{arXiv 2607.27454}) : axe log-fréquence, corrélation croisée et max-pooling résistent à la vitesse et à la hauteur ; MP3, bruit et codecs non testés.
+  \item \textbf{FakeMusicCaps} (\href{https://arxiv.org/abs/2409.10684}{arXiv 2409.10684}) : 27\,605 extraits de 10\,s, mono 16\,kHz, cinq modèles ouverts. MusicDET (ICML 2026, \href{https://arxiv.org/pdf/2605.18072}{arXiv 2605.18072}) s'entraîne sans échantillon généré et s'y teste.
+\end{itemize}
+
+\textbf{Apports :} (1) une matrice de généralisation sur cinq générateurs, avec un \og décodeur oracle\fg{} ; (2) une mesure des raccourcis par un détecteur de métadonnées seul ; (3) un test conjoint vitesse, hauteur et MP3. L'objectif est une \emph{mesure propre} : une hypothèse réfutée reste un résultat valide.
+
+\newpage
+
+% ==================================================================
+\section{Hypothèses (datées et figées avant tout entraînement)}
+% ==================================================================
+
+\renewcommand{\arraystretch}{1.2}
+{\small
+\begin{tabularx}{\textwidth}{@{}L{2.8cm}L{8.3cm}L{4.0cm}@{}}
+\toprule
+\textbf{Hypothèse} & \textbf{En une phrase} & \textbf{Réfutée si}\\
+\midrule
+\textbf{H1} Artefacts du décodeur (Fig.~\ref{fig:matrice}) &
+Un détecteur transfère mieux vers les générateurs dont le décodeur ressemble à celui qui a fabriqué ses \og faux\fg{} (décodeur oracle contre codec générique). &
+Pas de gain d'AUC avec l'oracle.\\
+\addlinespace[3pt]
+\textbf{H2} Transfert partiel (Fig.~\ref{fig:matrice}) &
+Entraîné sur FMA contre FMA ré-encodé, le détecteur repère surtout MusicGen (basé sur EnCodec) et peu les quatre autres ($\AUC < 0{,}90$). &
+AUC $\approx 0{,}5$ partout, ou élevée sans codec proche.\\
+\addlinespace[3pt]
+\textbf{H3} Raccourcis (Fig.~\ref{fig:pipeline}) &
+Une part du score vient du format, de la fréquence d'échantillonnage, du volume, de la durée ou du silence ; on la mesure par un détecteur de métadonnées \emph{après} la chaîne commune. &
+AUC $\approx 0{,}5$ \emph{et} normalisation sans effet.\\
+\addlinespace[3pt]
+\textbf{H4} Log-fréquence (Fig.~\ref{fig:logfreq}) &
+Le spectre linéaire s'effondre après un changement de vitesse ; la log-fréquence avec max-pooling y résiste mieux, pas forcément au MP3. &
+Pas mieux sous vitesse, ou aussi robuste au MP3.\\
+\bottomrule
+\end{tabularx}
+}
+
+\vspace{2pt}
+{\footnotesize\textit{Notes.} MusicGen est déjà détecté dans la littérature (H2) ; sans chaîne commune, les métadonnées séparent trivialement FMA de FakeMusicCaps : 30\,s MP3 contre 10\,s WAV à 16\,kHz (H3) ; l'article de robustesse ne teste pas le MP3 (H4).}
+
+\vspace{4pt}
+
+% ---------------- Figure 2 : carte des tests H1 / H2 ----------------
+\begin{center}
+\begin{tikzpicture}[font=\footnotesize]
+\def\cw{1.65}\def\ch{0.72}\def\lx{3.7}
+% titres
+\node[font=\scriptsize\bfseries,anchor=south west] at (\lx,0.72) {Générateurs testés (FakeMusicCaps)};
+\node[font=\scriptsize\bfseries,anchor=south east] at (\lx-0.1,0.05) {FMA ré-encodé par :};
+\node[font=\scriptsize,align=center] at (\lx+0.5*\cw,0.3) {MusicGen};
+\node[font=\scriptsize,align=center] at (\lx+1.5*\cw,0.3) {Stable Audio\\Open};
+\node[font=\scriptsize,align=center] at (\lx+2.5*\cw,0.3) {AudioLDM2};
+\node[font=\scriptsize,align=center] at (\lx+3.5*\cw,0.3) {MusicLDM};
+\node[font=\scriptsize,align=center] at (\lx+4.5*\cw,0.3) {Mustango};
+% cellules : lignes génériques (H2)
+\foreach \r in {1,2}{
+  \foreach \c in {1,...,5}{
+    \pgfmathsetmacro{\x}{\lx+(\c-1)*\cw}
+    \pgfmathsetmacro{\y}{-(\r-1)*\ch}
+    \ifnum\c=1 \fill[blue!35] (\x,\y) rectangle ++(\cw,-\ch);
+    \else \fill[blue!12] (\x,\y) rectangle ++(\cw,-\ch);\fi
+    \node[font=\scriptsize,text=black!55] at (\x+0.5*\cw,\y-0.5*\ch) {AUC ?};
+  }
+}
+% cellules : lignes oracle (H1)
+\foreach \r in {3,4}{
+  \foreach \c in {1,...,5}{
+    \pgfmathsetmacro{\x}{\lx+(\c-1)*\cw}
+    \pgfmathsetmacro{\y}{-(\r-1)*\ch}
+    \pgfmathtruncatemacro{\diag}{\r-2}
+    \ifnum\c=\diag \fill[orange!50] (\x,\y) rectangle ++(\cw,-\ch);
+    \else \fill[orange!12] (\x,\y) rectangle ++(\cw,-\ch);\fi
+    \node[font=\scriptsize,text=black!55] at (\x+0.5*\cw,\y-0.5*\ch) {AUC ?};
+  }
+}
+\foreach \i in {0,...,5}{\draw[black!30] (\lx+\i*\cw,0)--(\lx+\i*\cw,-4*\ch);}
+\foreach \j in {0,...,4}{\draw[black!30] (\lx,-\j*\ch)--(\lx+5*\cw,-\j*\ch);}
+% étiquettes de lignes
+\node[anchor=east,align=right,font=\scriptsize] at (\lx-0.1,-0.5*\ch) {EnCodec 24\,kHz\\\textit{(générique)}};
+\node[anchor=east,align=right,font=\scriptsize] at (\lx-0.1,-1.5*\ch) {DAC\\\textit{(générique)}};
+\node[anchor=east,align=right,font=\scriptsize] at (\lx-0.1,-2.5*\ch) {EnCodec 32\,kHz\\\textit{(oracle de MusicGen)}};
+\node[anchor=east,align=right,font=\scriptsize] at (\lx-0.1,-3.5*\ch) {VAE de Stable Audio Open\\\textit{(oracle)}};
+% légende
+\node[anchor=north west,text width=3.3cm,font=\scriptsize,align=left] at (\lx+5*\cw+0.15,0.6)
+ {\hyphenpenalty=10000 \textcolor{blue!55}{$\blacksquare$} \textbf{H2} : colonne \mbox{MusicGen} contre les quatre autres, avec les codecs génériques.\\[3pt]
+  \textcolor{orange!75}{$\blacksquare$} \textbf{H1} : cellule oracle contre cellule générique de la même colonne.\\[3pt]
+  Cellule~= AUC et son \mbox{intervalle de confiance}, à mesurer.};
+\end{tikzpicture}
+\end{center}
+\vspace{-0.9em}
+\figcap{fig:matrice}{Carte des tests de H1 et H2 : lignes = sources d'entraînement, colonnes = générateurs testés. Schéma du plan d'analyse ; aucun résultat n'est représenté.}
+
+% ---------------- Figure 3 : axe log et vitesse (H4) ----------------
+\begin{center}
+\begin{tikzpicture}[font=\footnotesize]
+% panneau linéaire
+\node[font=\footnotesize\bfseries] at (3.6,1.3) {Axe linéaire};
+\draw[-{Stealth[length=4pt]}] (0,0)--(7.3,0) node[right,font=\scriptsize] {$f$};
+\foreach \k in {1,...,6}{
+  \pgfmathsetmacro{\xo}{0.3+0.85*\k}
+  \pgfmathsetmacro{\xs}{0.3+1.0625*\k}
+  \draw[blue!70!black,line width=1.3pt] (\xo,0)--(\xo,0.95);
+  \draw[orange!85!black,line width=1.3pt] (\xs,0)--(\xs,0.75);
+}
+\draw[<->,thin] (1.15,-0.3)--(1.3625,-0.3) node[below,font=\scriptsize] {faible};
+\draw[<->,thin] (5.4,-0.3)--(6.675,-0.3) node[below,font=\scriptsize] {grand};
+\node[font=\scriptsize,align=center] at (3.6,-1.0) {le décalage croît avec la fréquence :\\les pics ne se superposent plus};
+% panneau logarithmique
+\node[font=\footnotesize\bfseries] at (11.9,1.3) {Axe logarithmique};
+\draw[-{Stealth[length=4pt]}] (8.4,0)--(15.2,0) node[right,font=\scriptsize] {$\ln f$};
+\foreach \k in {1,...,6}{
+  \pgfmathsetmacro{\xo}{8.7+3.0*ln(\k)}
+  \pgfmathsetmacro{\xs}{8.7+3.0*ln(\k)+0.669}
+  \draw[blue!70!black,line width=1.3pt] (\xo,0)--(\xo,0.95);
+  \draw[orange!85!black,line width=1.3pt] (\xs,0)--(\xs,0.75);
+}
+\draw[<->,thin] (8.7,-0.3)--(9.369,-0.3) node[below,font=\scriptsize] {$\ln a$};
+\draw[<->,thin] (14.075,-0.3)--(14.744,-0.3) node[below,font=\scriptsize] {$\ln a$};
+\node[font=\scriptsize,align=center] at (11.9,-1.0) {même décalage pour tous les pics :\\une simple translation};
+\end{tikzpicture}
+\end{center}
+\vspace{-0.9em}
+\figcap{fig:logfreq}{Pourquoi la log-fréquence aide (H4). \textcolor{blue!70!black}{$\blacksquare$}~spectre original, \textcolor{orange!85!black}{$\blacksquare$}~vitesse $\times a$ ($a=1{,}25$, harmoniques 1 à 6). Une vitesse $\times a$ multiplie les fréquences : $\log(af)=\log f+\log a$. Sur l'axe logarithmique, c'est une translation, à laquelle corrélation croisée et max-pooling sont invariants.}
+
+\textbf{Convention.} \og Mieux\fg{} : l'intervalle de confiance à 95\,\% de la différence d'AUC (bootstrap apparié, groupé par artiste ou par légende) exclut 0. \og Transfert fort\fg{} : $\AUC\geq 0{,}90$, seuil indicatif à valider avec l'encadrant.
+
+\end{document}

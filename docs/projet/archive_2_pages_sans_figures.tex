@@ -1,0 +1,132 @@
+\documentclass[11pt,a4paper]{article}
+
+% ------------------------------------------------------------------
+% Proposition de projet --- version courte (2 pages)
+% Compilation : pdflatex (2 passes) ou latexmk -pdf
+% ------------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[french]{babel}
+\usepackage[a4paper,left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.2cm]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{array,tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage[skins]{tcolorbox}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+
+\linespread{1.05}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlength{\headheight}{14pt}
+\setlist[itemize]{leftmargin=1.5em,itemsep=4pt,topsep=4pt,parsep=0pt}
+\setlist[enumerate]{leftmargin=1.9em,itemsep=4pt,topsep=4pt,parsep=0pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.3pt}
+\fancyhead[L]{\small Proposition de projet --- détection de musique IA}
+\fancyhead[R]{\small 7 novembre 2026}
+\fancyfoot[C]{\small\thepage}
+
+\newcommand{\acompleter}[1]{\textcolor{red!70!black}{[À compléter : #1]}}
+\newcommand{\AUC}{\textrm{AUC}}
+
+\newtcolorbox{hyp}[1]{enhanced,colback=blue!3!white,colframe=blue!45!black,
+  fonttitle=\bfseries,title={#1},boxrule=0.6pt,arc=2pt,
+  left=8pt,right=8pt,top=5pt,bottom=5pt,before skip=9pt,after skip=9pt}
+
+\hypersetup{pdftitle={Proposition de projet (2 pages) --- Ce que voit un détecteur de musique IA},
+  pdfauthor={À compléter}}
+
+\begin{document}
+
+% ------------------------------------------------------------------
+\begin{center}
+{\large\scshape Proposition de projet --- Master 2 Intelligence Artificielle}\\[0.7em]
+{\LARGE\bfseries Ce que voit un détecteur de musique IA}
+\end{center}
+
+\vspace{0.2em}
+
+\begin{tabularx}{\textwidth}{@{}>{\bfseries}l X >{\bfseries}l X@{}}
+Étudiant(e) & \acompleter{nom} & Encadrant(e) & \acompleter{nom}\\
+Durée & 4 semaines & Date & 7 novembre 2026\\
+\end{tabularx}
+
+\vspace{0.4em}
+
+\textbf{Résumé.} Les détecteurs de musique générée par IA sont quasi parfaits sur les sorties de générateurs connus. On sait peu comment ils se comportent face à un générateur inconnu, un changement de vitesse ou une compression MP3, ni quelle part de leur score vient de raccourcis de jeu de données plutôt que d'artefacts de génération. Ce projet de réplication-extension fabrique des « faux » \emph{sans générateur de musique} (musique réelle ré-encodée par des codecs neuronaux) et teste les détecteurs ainsi entraînés sur cinq générateurs ouverts et sous attaques.
+
+% ==================================================================
+\section{Question de recherche}
+% ==================================================================
+
+\begin{quote}
+\emph{Un détecteur appris uniquement sur de la musique réelle contre sa version ré-encodée par des codecs neuronaux généralise-t-il à des générateurs qu'il n'a jamais vus, ou apprend-il un raccourci de jeu de données ? Et que devient-il quand on change la vitesse ou qu'on compresse en MP3 ?}
+\end{quote}
+
+\textbf{Principe.} On passe de la vraie musique (FMA) dans un codec neuronal (EnCodec, DAC) pour fabriquer les « faux », on entraîne des détecteurs, puis on les teste sur FakeMusicCaps et sous attaques (vitesse, hauteur, MP3, rééchantillonnage).
+
+% ==================================================================
+\section{Positionnement}
+% ==================================================================
+
+\textbf{Ce qui existe déjà.}
+\begin{itemize}
+  \item \textbf{Réel contre reconstruction.} Afchar et al.\ (Deezer, \href{https://arxiv.org/abs/2405.04181}{arXiv 2405.04181}) distinguent déjà la musique réelle de sa reconstruction par auto-encodeur : scores très élevés sur les décodeurs vus, généralisation médiocre entre familles de décodeurs, robustesse limitée.
+  \item \textbf{Robustesse à la vitesse.} L'article ISMIR 2026 (\href{https://arxiv.org/abs/2607.27454}{arXiv 2607.27454}) combine axe logarithmique de fréquence, corrélation croisée et max-pooling, et résiste à la vitesse et à la hauteur. Il ne teste ni le MP3, ni le bruit, ni les reconstructions de codecs.
+  \item \textbf{Banc de test.} FakeMusicCaps (\href{https://arxiv.org/abs/2409.10684}{arXiv 2409.10684}) : 27\,605 extraits de 10\,s, mono 16\,kHz, de MusicGen, MusicLDM, AudioLDM2, Stable Audio Open et Mustango. MusicDET (ICML 2026, \href{https://arxiv.org/pdf/2605.18072}{arXiv 2605.18072}) s'entraîne sans échantillon généré et se teste sur FakeMusicCaps.
+\end{itemize}
+
+\textbf{Ce que le projet ajoute.} Il ne vise pas à battre l'état de l'art mais à produire une \emph{mesure propre}, où une hypothèse réfutée reste un résultat valide :
+\begin{enumerate}
+  \item une \textbf{matrice de généralisation} sur cinq générateurs, avec un « décodeur oracle » ;
+  \item une \textbf{quantification des raccourcis} par un détecteur de métadonnées seul ;
+  \item un \textbf{test conjoint} vitesse, hauteur et MP3 (le MP3 n'est pas évalué dans l'article de robustesse).
+\end{enumerate}
+
+\newpage
+
+% ==================================================================
+\section{Hypothèses (datées et figées avant tout entraînement)}
+% ==================================================================
+
+\begin{hyp}{H1 --- Les artefacts sont propres à l'architecture du décodeur}
+\textbf{Énoncé.} Un détecteur transfère mieux vers les générateurs dont le décodeur ressemble à celui qui a fabriqué ses « faux » que vers les autres.
+
+\textbf{Prédiction.} Entraîné avec le décodeur \emph{même} de MusicGen (EnCodec 32\,kHz) ou de Stable Audio Open (son VAE), le détecteur fait mieux sur ce générateur que celui entraîné avec des codecs génériques (EnCodec 24\,kHz, DAC).
+
+\textbf{Réfutée si} la différence d'AUC n'est pas mesurable pour les deux générateurs et qu'aucun lien de rang n'apparaît entre ressemblance des décodeurs et AUC croisée.
+\end{hyp}
+
+\begin{hyp}{H2 --- Les faux de codec transfèrent en partie}
+\textbf{Énoncé.} Un détecteur entraîné sur FMA contre FMA ré-encodé (EnCodec, DAC) détecte \emph{une partie} de FakeMusicCaps : surtout MusicGen, qui repose sur EnCodec, et peu les quatre autres.
+
+\textbf{Prédiction.} L'AUC sur MusicGen dépasse celle de chacun des autres, qui restent sous 0,90.
+
+\textbf{Réfutée si} l'AUC est proche de 0,5 partout, ou aussi élevée sans codec proche. \emph{Remarque : MusicGen est déjà détecté dans la littérature ; l'apport porte sur les quatre autres.}
+\end{hyp}
+
+\begin{hyp}{H3 --- Une part de la précision vient de raccourcis}
+\textbf{Énoncé.} Une part du score vient du format (MP3 ou WAV), de la fréquence d'échantillonnage, de la bande passante, du volume, de la durée ou des silences, et non des artefacts de génération.
+
+\textbf{Prédiction.} Un classifieur qui ne voit que des métadonnées calculées \emph{après} une normalisation commune reste au-dessus du hasard, et appliquer cette normalisation fait chuter l'AUC des détecteurs sur spectrogramme.
+
+\textbf{Réfutée si} l'AUC des métadonnées est compatible avec 0,5 \emph{et} que la normalisation ne change rien. \emph{Remarque : sans normalisation, les métadonnées séparent trivialement FMA (30\,s, MP3) de FakeMusicCaps (10\,s, 16\,kHz, WAV) ; ce n'est pas un résultat.}
+\end{hyp}
+
+\begin{hyp}{H4 --- La log-fréquence résiste à la vitesse, pas forcément au MP3}
+\textbf{Énoncé.} Les détecteurs à spectre linéaire s'effondrent après un changement de vitesse ; la représentation à axe logarithmique de fréquence avec max-pooling y résiste mieux, mais pas nécessairement à la compression MP3 ni au bruit.
+
+\textbf{Prédiction.} La perte d'AUC sous vitesse ($\times 0{,}9$ et $\times 1{,}1$) est plus faible pour ce détecteur ; sous MP3 à 128\,kbit/s, il n'a pas d'avantage net.
+
+\textbf{Réfutée si} il ne résiste pas mieux à la vitesse, ou s'il résiste au MP3 aussi bien qu'à la vitesse. \emph{Remarque : l'article de robustesse ne teste pas le MP3 ; cette nuance est une prédiction du projet.}
+\end{hyp}
+
+\textbf{Convention.} « Au-dessus du hasard » : l'intervalle de confiance à 95\,\% de l'AUC exclut 0,5. « Mieux » : l'intervalle à 95\,\% de la différence d'AUC exclut 0 (bootstrap apparié, groupé par artiste ou par légende). Le seuil « transfert fort » ($\AUC \geq 0{,}90$) est indicatif et à valider avec l'encadrant.
+
+\end{document}

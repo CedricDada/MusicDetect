@@ -1,0 +1,14 @@
+# Configuration de référence du projet : FMA small en entier (8 000 pistes), bootstrap complet.
+# C'est la « phase 2 » de la proposition (§4.5), à lancer seulement si le calcul et le disque le permettent
+# après la phase 1 (configs/phase1.yaml). Les valeurs non listées viennent de src/musicdetect/default.yaml.
+#   musicdetect manifest -c configs/full.yaml && musicdetect build-fma -c configs/full.yaml --codec encodec_24k_6kbps
+fma:
+  subset: small
+  split_mode: artist
+  max_tracks: null
+audio:
+  segments_per_track: 2
+  silence_policy: none          # ablation : relancer avec --set audio.silence_policy=trim --tag silence_trim
+eval:
+  bootstrap: 1000
+  fpr_target: 0.01
