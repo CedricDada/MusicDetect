@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -16,8 +18,8 @@ track_id,,,,,
 
 
 def test_audio_path_matches_fma_convention():
-    assert str(fma.audio_path("data/fma_small", 2)) == "data/fma_small/000/000002.mp3"
-    assert str(fma.audio_path("d", 133297)) == "d/133/133297.mp3"
+    assert fma.audio_path("data/fma_small", 2).as_posix() == "data/fma_small/000/000002.mp3"
+    assert fma.audio_path("d", 133297).as_posix() == "d/133/133297.mp3"
 
 
 def test_load_tracks_and_subset_nesting(tmp_path):
@@ -71,4 +73,4 @@ def test_segment_index_roundtrip_and_sets(tmp_path):
     s = make_pair_set(back, tmp_path, "train", "toy", "real_sr24000")
     assert len(s) == 2 and list(s.labels) == [0, 1] and s.groups.tolist() == ["1", "1"]
     c = combine([s, SegmentSet(back[back.split == "val"], tmp_path)])
-    assert len(c) == 3 and all(p.startswith("/") for p in c.df["path"])
+    assert len(c) == 3 and all(Path(p).is_absolute() for p in c.df["path"])
