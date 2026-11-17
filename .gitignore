@@ -1,5 +1,6 @@
 # Données et sorties volumineuses : ne jamais committer (FMA, FakeMusicCaps, segments, modèles, résultats)
 data/
+docs/*
 results/
 *.wav
 *.mp3
@@ -20,3 +21,7 @@ __pycache__/
 *.synctex.gz
 *.fls
 *.fdb_latexmk
+
+# Journaux d'exécution et artefacts de notebooks
+logs/
+.ipynb_checkpoints/
