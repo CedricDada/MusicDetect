@@ -27,3 +27,6 @@ __pycache__/
 logs/
 .ipynb_checkpoints/
 log.txt
+arXiv-2212.11277v1/
+musicdetect-etat/
+notebooks/musicdetect-kaggle-result.ipynb

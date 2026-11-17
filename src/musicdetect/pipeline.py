@@ -17,6 +17,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from .audio.attacks import default_attack_grid
@@ -192,10 +193,20 @@ def step_evaluate(cfg, paths: Paths, detector: str, codec: str, tests: list[str]
         spec = attack_on or tests[0]
         segs = resolve_test_set(spec, paths.fma_index, paths.fma_dir, paths.fmc_index, paths.fmc_dir, real_src)
         grid = default_attack_grid(dict(cfg.eval.attacks))
-        att = evaluate_attacks(det, segs, grid, thr, B, cfg.eval.seed, cfg.audio.resample_backend)
+        att_scores: dict[str, np.ndarray] = {}
+        att = evaluate_attacks(det, segs, grid, thr, B, cfg.eval.seed, cfg.audio.resample_backend,
+                               scores=att_scores if save_scores else None)
         att.insert(0, "test", spec)
         att.insert(0, "train_codec", codec)
         att.insert(0, "detector", detector)
+        # Scores par segment sous chaque attaque : mêmes seg_id que le jeu propre, d'où un ΔAUC apparié possible.
+        if save_scores:
+            d = paths.results / "scores"
+            d.mkdir(exist_ok=True)
+            for name, s in att_scores.items():
+                out = segs.df[["seg_id", "label", "group"]].copy()
+                out["score"] = s
+                out.to_csv(d / f"attacks_{stem}__{spec.replace(':', '_')}__{name}.csv", index=False)
         att.to_csv(paths.results / f"attacks_{stem}.csv", index=False)
         print(att[["attack", "auc", "auc_lo", "auc_hi", "tpr", "fpr"]].to_string(index=False))
     return res

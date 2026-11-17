@@ -45,13 +45,18 @@ def evaluate_set(detector: Detector, segs: SegmentSet, thr: float | None, B: int
 
 
 def evaluate_attacks(detector: Detector, segs: SegmentSet, grid: list[dict], thr: float | None,
-                     B: int = 1000, seed: int = 0, backend: str = "soxr") -> pd.DataFrame:
-    """Une ligne par attaque (+ la ligne « clean ») : AUC avec IC, TPR / FPR au seuil de validation propre."""
+                     B: int = 1000, seed: int = 0, backend: str = "soxr",
+                     scores: dict[str, np.ndarray] | None = None) -> pd.DataFrame:
+    """Une ligne par attaque (+ la ligne « clean ») : AUC avec IC, TPR / FPR au seuil de validation propre.
+    Si `scores` est fourni, il reçoit les scores par segment de chaque attaque (clé : nom de l'attaque)."""
     rows = []
     for spec in tqdm([{"kind": "none"}, *grid], desc="attaques"):
         t = None if spec["kind"] == "none" else AttackTransform(spec, seed, backend)
-        row, _ = evaluate_set(detector, segs.with_transform(t), thr, B, seed, {"attack": attack_name(spec)})
+        name = attack_name(spec)
+        row, s = evaluate_set(detector, segs.with_transform(t), thr, B, seed, {"attack": name})
         rows.append(row)
+        if scores is not None:
+            scores[name] = s
     return pd.DataFrame(rows)
 
 
