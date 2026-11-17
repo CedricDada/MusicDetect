@@ -36,15 +36,20 @@ que les monter en lecture seule garantit que les trois graines portent sur les m
 
 Le déplacement est instantané : même volume, aucune copie de données.
 
+Les deux dossiers de segments sont mis **à la racine** du dossier d'envoi, et non sous `segments/` :
+le CLI produit alors deux archives séparées de 4,8 Go et 8,2 Go au lieu d'une seule de 13 Go, ce qui
+limite la casse si un envoi échoue. Le notebook cherche chaque élément par son nom, la mise en page
+du Dataset n'a donc pas d'importance.
+
 ```powershell
 $P = "D:\3A\Stages\Préparation entretiens - projets  audio, World models\musicdetect"
 $U = "D:\kaggle_upload_segments"
 
-New-Item -ItemType Directory -Force "$U\segments" | Out-Null
+New-Item -ItemType Directory -Force $U | Out-Null
 Copy-Item "$P\data\work\index_fma_phase1.csv" $U
 Copy-Item "$P\data\work\index_fmc_phase1.csv" $U
-Move-Item  "$P\data\work\segments\fma_phase1" "$U\segments\fma_phase1"
-Move-Item  "$P\data\work\segments\fmc_phase1" "$U\segments\fmc_phase1"
+Move-Item  "$P\data\work\segments\fma_phase1" "$U\fma_phase1"
+Move-Item  "$P\data\work\segments\fmc_phase1" "$U\fmc_phase1"
 ```
 
 Pendant l'envoi, les jonctions locales `fma_phase1_s*` pointent dans le vide. C'est sans conséquence
@@ -76,8 +81,8 @@ Compte plusieurs heures selon ta liaison montante : 13 Go à 10 Mb/s font enviro
 ## 3. Remettre les segments en place
 
 ```powershell
-Move-Item "$U\segments\fma_phase1" "$P\data\work\segments\fma_phase1"
-Move-Item "$U\segments\fmc_phase1" "$P\data\work\segments\fmc_phase1"
+Move-Item "$U\fma_phase1" "$P\data\work\segments\fma_phase1"
+Move-Item "$U\fmc_phase1" "$P\data\work\segments\fmc_phase1"
 Remove-Item -Recurse $U
 ```
 
