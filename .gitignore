@@ -26,3 +26,4 @@ __pycache__/
 # Journaux d'exécution et artefacts de notebooks
 logs/
 .ipynb_checkpoints/
+log.txt
