@@ -1,5 +1,6 @@
 # Données et sorties volumineuses : ne jamais committer (FMA, FakeMusicCaps, segments, modèles, résultats)
 data/
+!src/musicdetect/data/
 docs/*
 results/
 *.wav
