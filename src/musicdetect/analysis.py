@@ -329,6 +329,11 @@ def _style(plt):
                          "figure.dpi": 150, "savefig.bbox": "tight"})
 
 
+def _comma(nd: int):
+    from matplotlib.ticker import FuncFormatter
+    return FuncFormatter(lambda v, _: f"{v:.{nd}f}".replace(".", ","))
+
+
 def _save(fig, out: Path, name: str):
     for ext in ("pdf", "png"):
         fig.savefig(out / f"{name}.{ext}")
@@ -371,7 +376,7 @@ def figures(metrics: pd.DataFrame, attacks: pd.DataFrame, out: Path):
         for i in range(A.shape[0]):
             for j in range(A.shape[1]):
                 if not np.isnan(A[i, j]):
-                    ax.text(j, i, f"{A[i, j]:.2f}", ha="center", va="center", fontsize=8,
+                    ax.text(j, i, f"{A[i, j]:.2f}".replace(".", ","), ha="center", va="center", fontsize=8,
                             color="white" if abs(A[i, j] - 0.5) > 0.33 else INK)
         ax.set_xticks(range(len(cols)), col_names, fontsize=8)
         ax.set_yticks(range(len(names)), names, fontsize=8)
@@ -381,6 +386,7 @@ def figures(metrics: pd.DataFrame, attacks: pd.DataFrame, out: Path):
         cb = fig.colorbar(im, ax=ax, fraction=0.03, pad=0.02)
         cb.set_label("AUC (0,5 = hasard)")
         cb.outline.set_visible(False)
+        cb.ax.yaxis.set_major_formatter(_comma(1))
         _save(fig, out, "fig_matrice_auc")
         plt.close(fig)
 
@@ -402,6 +408,7 @@ def figures(metrics: pd.DataFrame, attacks: pd.DataFrame, out: Path):
         ax.set_xticks(range(len(att)), [names[a] for a in att])
         ax.set_ylabel("AUC sur MusicGen (IC 95 %)")
         ax.set_ylim(0.15, 1.0)
+        ax.yaxis.set_major_formatter(_comma(1))
         ax.yaxis.grid(True, color=GRID, lw=0.8)
         ax.set_axisbelow(True)
         ax.legend(frameon=False, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=3, fontsize=8)
@@ -420,6 +427,7 @@ def figures(metrics: pd.DataFrame, attacks: pd.DataFrame, out: Path):
         ax.set_xticks(range(len(GENS)), [GEN_LABEL[g] for g in GENS])
         ax.set_ylabel("AUC (IC 95 %)")
         ax.set_ylim(0.45, 1.0)
+        ax.yaxis.set_major_formatter(_comma(1))
         ax.yaxis.grid(True, color=GRID, lw=0.8)
         ax.set_axisbelow(True)
         ax.legend(frameon=False, loc="lower right", fontsize=8)
